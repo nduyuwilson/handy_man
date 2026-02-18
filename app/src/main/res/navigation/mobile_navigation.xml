@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_projects">
+
+    <fragment
+        android:id="@+id/navigation_projects"
+        android:name="com.nduyuwilson.thitima.ui.projects.ProjectsFragment"
+        android:label="Projects"
+        tools:layout="@layout/fragment_projects">
+        <action
+            android:id="@+id/action_navigation_projects_to_addProjectFragment"
+            app:destination="@id/addProjectFragment" />
+        <action
+            android:id="@+id/action_navigation_projects_to_projectDetailsFragment"
+            app:destination="@id/projectDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addProjectFragment"
+        android:name="com.nduyuwilson.thitima.ui.projects.AddProjectFragment"
+        android:label="Add Project"
+        tools:layout="@layout/fragment_add_project" />
+
+    <fragment
+        android:id="@+id/projectDetailsFragment"
+        android:name="com.nduyuwilson.thitima.ui.projects.ProjectDetailsFragment"
+        android:label="Project Details"
+        tools:layout="@layout/fragment_project_details">
+        <argument
+            android:name="projectId"
+            app:argType="integer" />
+        <action
+            android:id="@+id/action_projectDetailsFragment_to_addComponentToProjectFragment"
+            app:destination="@id/addComponentToProjectFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addComponentToProjectFragment"
+        android:name="com.nduyuwilson.thitima.ui.projects.AddComponentToProjectFragment"
+        android:label="Add Component"
+        tools:layout="@layout/fragment_add_component_to_project" />
+
+    <fragment
+        android:id="@+id/navigation_catalogue"
+        android:name="com.nduyuwilson.thitima.ui.catalogue.CatalogueFragment"
+        android:label="Catalogue"
+        tools:layout="@layout/fragment_catalogue">
+        <action
+            android:id="@+id/action_navigation_catalogue_to_addItemFragment"
+            app:destination="@id/addItemFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addItemFragment"
+        android:name="com.nduyuwilson.thitima.ui.catalogue.AddItemFragment"
+        android:label="Add Item"
+        tools:layout="@layout/fragment_add_item" />
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.nduyuwilson.thitima.ui.settings.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings" />
+</navigation>

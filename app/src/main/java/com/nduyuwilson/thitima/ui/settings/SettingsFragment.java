@@ -21,7 +21,8 @@ import com.nduyuwilson.thitima.R;
 public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
-    private TextInputEditText editTextUserName, editTextUserNumber, editTextPaymentOptions;
+    private TextInputEditText editTextBusinessName, editTextUserName, editTextUserNumber, editTextBankDetails, editTextPaybill, editTextPaybillAccount, editTextTillNumber;
+    private MaterialButton buttonEditProfile, buttonSaveProfile;
 
     @Nullable
     @Override
@@ -35,23 +36,24 @@ public class SettingsFragment extends Fragment {
         
         sharedPreferences = requireActivity().getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
 
+        editTextBusinessName = view.findViewById(R.id.editTextBusinessName);
         editTextUserName = view.findViewById(R.id.editTextUserName);
         editTextUserNumber = view.findViewById(R.id.editTextUserNumber);
-        editTextPaymentOptions = view.findViewById(R.id.editTextPaymentOptions);
+        editTextBankDetails = view.findViewById(R.id.editTextBankDetails);
+        editTextPaybill = view.findViewById(R.id.editTextPaybill);
+        editTextPaybillAccount = view.findViewById(R.id.editTextPaybillAccount);
+        editTextTillNumber = view.findViewById(R.id.editTextTillNumber);
+        
+        buttonEditProfile = view.findViewById(R.id.buttonEditProfile);
+        buttonSaveProfile = view.findViewById(R.id.buttonSaveProfile);
 
-        // Load existing values
-        editTextUserName.setText(sharedPreferences.getString("user_name", ""));
-        editTextUserNumber.setText(sharedPreferences.getString("user_number", ""));
-        editTextPaymentOptions.setText(sharedPreferences.getString("payment_details", ""));
+        loadProfileData();
 
-        MaterialButton buttonSaveProfile = view.findViewById(R.id.buttonSaveProfile);
+        buttonEditProfile.setOnClickListener(v -> toggleEditMode(true));
+
         buttonSaveProfile.setOnClickListener(v -> {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("user_name", editTextUserName.getText().toString().trim());
-            editor.putString("user_number", editTextUserNumber.getText().toString().trim());
-            editor.putString("payment_details", editTextPaymentOptions.getText().toString().trim());
-            editor.apply();
-            Toast.makeText(requireContext(), "Profile saved", Toast.LENGTH_SHORT).show();
+            saveProfileData();
+            toggleEditMode(false);
         });
 
         MaterialButton buttonAppearance = view.findViewById(R.id.buttonAppearance);
@@ -64,12 +66,46 @@ public class SettingsFragment extends Fragment {
             new MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Logout")
                     .setMessage("Are you sure you want to logout?")
-                    .setPositiveButton("Logout", (dialog, which) -> {
-                        requireActivity().finish();
-                    })
+                    .setPositiveButton("Logout", (dialog, which) -> requireActivity().finish())
                     .setNegativeButton("Cancel", null)
                     .show();
         });
+    }
+
+    private void loadProfileData() {
+        editTextBusinessName.setText(sharedPreferences.getString("business_name", "THITIMA ELECTRICALS"));
+        editTextUserName.setText(sharedPreferences.getString("user_name", ""));
+        editTextUserNumber.setText(sharedPreferences.getString("user_number", ""));
+        editTextBankDetails.setText(sharedPreferences.getString("bank_details", ""));
+        editTextPaybill.setText(sharedPreferences.getString("paybill_number", ""));
+        editTextPaybillAccount.setText(sharedPreferences.getString("paybill_account", ""));
+        editTextTillNumber.setText(sharedPreferences.getString("till_number", ""));
+    }
+
+    private void toggleEditMode(boolean editing) {
+        editTextBusinessName.setEnabled(editing);
+        editTextUserName.setEnabled(editing);
+        editTextUserNumber.setEnabled(editing);
+        editTextBankDetails.setEnabled(editing);
+        editTextPaybill.setEnabled(editing);
+        editTextPaybillAccount.setEnabled(editing);
+        editTextTillNumber.setEnabled(editing);
+        
+        buttonEditProfile.setVisibility(editing ? View.GONE : View.VISIBLE);
+        buttonSaveProfile.setVisibility(editing ? View.VISIBLE : View.GONE);
+    }
+
+    private void saveProfileData() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("business_name", editTextBusinessName.getText().toString().trim());
+        editor.putString("user_name", editTextUserName.getText().toString().trim());
+        editor.putString("user_number", editTextUserNumber.getText().toString().trim());
+        editor.putString("bank_details", editTextBankDetails.getText().toString().trim());
+        editor.putString("paybill_number", editTextPaybill.getText().toString().trim());
+        editor.putString("paybill_account", editTextPaybillAccount.getText().toString().trim());
+        editor.putString("till_number", editTextTillNumber.getText().toString().trim());
+        editor.apply();
+        Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show();
     }
 
     private void showThemeDialog() {
@@ -84,15 +120,9 @@ public class SettingsFragment extends Fragment {
                     editor.apply();
 
                     switch (which) {
-                        case 0:
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                            break;
-                        case 1:
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                            break;
-                        case 2:
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-                            break;
+                        case 0: AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO); break;
+                        case 1: AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); break;
+                        case 2: AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM); break;
                     }
                     dialog.dismiss();
                 })

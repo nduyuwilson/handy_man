@@ -3,15 +3,20 @@ package com.nduyuwilson.thitima.ui.projects;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -36,6 +41,8 @@ public class AddComponentToProjectFragment extends Fragment {
     private int projectId;
     private ItemViewModel itemViewModel;
     private ProjectViewModel projectViewModel;
+    private CatalogueAdapter adapter;
+    private List<Item> allItems = new ArrayList<>();
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -61,7 +68,7 @@ public class AddComponentToProjectFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewSelectItems);
         recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         
-        CatalogueAdapter adapter = new CatalogueAdapter();
+        adapter = new CatalogueAdapter();
         adapter.setOnItemClickListener(item -> {
             itemViewModel.getVariantsForItem(item.getId()).observe(getViewLifecycleOwner(), variants -> {
                 if (variants == null || variants.isEmpty()) {
@@ -73,11 +80,51 @@ public class AddComponentToProjectFragment extends Fragment {
         });
         recyclerView.setAdapter(adapter);
 
-        itemViewModel.getAllItems().observe(getViewLifecycleOwner(), adapter::submitList);
+        itemViewModel.getAllItems().observe(getViewLifecycleOwner(), items -> {
+            allItems = items;
+            adapter.submitList(items);
+        });
+
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.search_menu, menu);
+                MenuItem searchItem = menu.findItem(R.id.action_search);
+                SearchView searchView = (SearchView) searchItem.getActionView();
+                searchView.setQueryHint("Search components...");
+                
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) { return false; }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        filterItems(newText);
+                        return true;
+                    }
+                });
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) { return false; }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
+    }
+
+    private void filterItems(String query) {
+        if (query == null || query.isEmpty()) {
+            adapter.submitList(allItems);
+            return;
+        }
+        List<Item> filtered = new ArrayList<>();
+        for (Item item : allItems) {
+            if (item.getName().toLowerCase().contains(query.toLowerCase())) {
+                filtered.add(item);
+            }
+        }
+        adapter.submitList(filtered);
     }
 
     private void showVariantSelectionGrid(Item item, List<ItemVariant> variants, View view) {
-        // Create a custom view for the dialog with a RecyclerView
         RecyclerView gridRecyclerView = new RecyclerView(requireContext());
         gridRecyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         gridRecyclerView.setPadding(16, 16, 16, 16);
@@ -88,14 +135,13 @@ public class AddComponentToProjectFragment extends Fragment {
                 .setNegativeButton("Cancel", null)
                 .create();
 
-        ItemVariantAdapter adapter = new ItemVariantAdapter(variant -> {
+        ItemVariantAdapter variantAdapter = new ItemVariantAdapter(variant -> {
             dialog.dismiss();
             showQuantityDialog(item, variant, view);
         });
         
-        // Add "Default" as a pseudo-variant if needed, or just list brands
-        adapter.submitList(variants);
-        gridRecyclerView.setAdapter(adapter);
+        variantAdapter.submitList(variants);
+        gridRecyclerView.setAdapter(variantAdapter);
 
         dialog.show();
     }
@@ -120,7 +166,6 @@ public class AddComponentToProjectFragment extends Fragment {
                     if (qty > 0) {
                         ProjectItem projectItem = new ProjectItem(projectId, item.getId(), qty, price);
                         if (variant != null) projectItem.setVariantId(variant.getId());
-                        
                         projectViewModel.insertProjectItem(projectItem);
                         Snackbar.make(view, "Added " + qty + " units", Snackbar.LENGTH_SHORT).show();
                         Navigation.findNavController(view).navigateUp();
@@ -129,7 +174,6 @@ public class AddComponentToProjectFragment extends Fragment {
             }
         });
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-
         builder.show();
     }
 }

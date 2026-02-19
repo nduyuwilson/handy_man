@@ -38,7 +38,8 @@ public class ProjectItemAdapter extends ListAdapter<ProjectItem, ProjectItemAdap
         @Override
         public boolean areContentsTheSame(@NonNull ProjectItem oldItem, @NonNull ProjectItem newItem) {
             return oldItem.getQuantity() == newItem.getQuantity() &&
-                    oldItem.getQuotedPrice() == newItem.getQuotedPrice();
+                    oldItem.getQuotedPrice() == newItem.getQuotedPrice() &&
+                    (oldItem.getVariantId() == null ? newItem.getVariantId() == null : oldItem.getVariantId().equals(newItem.getVariantId()));
         }
     };
 
@@ -55,7 +56,24 @@ public class ProjectItemAdapter extends ListAdapter<ProjectItem, ProjectItemAdap
         
         itemViewModel.getItemById(projectItem.getItemId()).observe(lifecycleOwner, item -> {
             if (item != null) {
-                holder.textViewName.setText(item.getName());
+                String displayName = item.getName();
+                
+                // If there's a variant, we need to show the variant's brand name
+                if (projectItem.getVariantId() != null) {
+                    itemViewModel.getVariantsForItem(item.getId()).observe(lifecycleOwner, variants -> {
+                        if (variants != null) {
+                            for (com.nduyuwilson.thitima.data.entity.ItemVariant v : variants) {
+                                if (v.getId() == projectItem.getVariantId()) {
+                                    holder.textViewName.setText(item.getName() + " (" + v.getBrandName() + ")");
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    holder.textViewName.setText(displayName);
+                }
+
                 holder.textViewDetails.setText(String.format(Locale.getDefault(), "Qty: %d x %s", 
                         projectItem.getQuantity(), Formatter.formatPrice(holder.itemView.getContext(), projectItem.getQuotedPrice())));
                 holder.textViewTotal.setText(Formatter.formatPrice(holder.itemView.getContext(), projectItem.getQuantity() * projectItem.getQuotedPrice()));

@@ -13,7 +13,7 @@
         android:orientation="vertical">
 
         <ImageView
-            android:id="@+id/imageViewItem"
+            android:id="@+id/imageViewVariant"
             android:layout_width="match_parent"
             android:layout_height="120dp"
             android:scaleType="centerCrop"
@@ -27,27 +27,16 @@
             android:padding="12dp">
 
             <TextView
-                android:id="@+id/textViewItemName"
+                android:id="@+id/textViewBrandName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Item Name"
+                android:text="Brand Name"
                 android:textAppearance="?attr/textAppearanceTitleSmall"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
             <TextView
-                android:id="@+id/textViewItemDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Description"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:textColor="?android:attr/textColorSecondary" />
-
-            <TextView
-                android:id="@+id/textViewItemPrice"
+                android:id="@+id/textViewVariantPrice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"

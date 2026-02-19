@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,6 +24,16 @@ public class AddProjectFragment extends Fragment {
 
     private TextInputEditText editTextName, editTextLocation, editTextDescription, editTextClientName, editTextClientContact, editTextLabourCost, editTextLabourPercent, editTextRules;
     private ProjectViewModel projectViewModel;
+    private int projectId = -1;
+    private Project existingProject;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            projectId = getArguments().getInt("projectId", -1);
+        }
+    }
 
     @Nullable
     @Override
@@ -46,7 +57,31 @@ public class AddProjectFragment extends Fragment {
         editTextRules = view.findViewById(R.id.editTextRules);
 
         Button buttonSave = view.findViewById(R.id.buttonSaveProject);
+        TextView textViewHeader = view.findViewById(R.id.textViewHeader);
+
+        if (projectId != -1) {
+            textViewHeader.setText("Edit Project Details");
+            buttonSave.setText("Update Project");
+            projectViewModel.getProjectById(projectId).observe(getViewLifecycleOwner(), project -> {
+                if (project != null) {
+                    existingProject = project;
+                    populateFields(project);
+                }
+            });
+        }
+
         buttonSave.setOnClickListener(v -> saveProject(v));
+    }
+
+    private void populateFields(Project project) {
+        editTextName.setText(project.getName());
+        editTextLocation.setText(project.getLocation());
+        editTextDescription.setText(project.getDescription());
+        editTextClientName.setText(project.getClientName());
+        editTextClientContact.setText(project.getClientContact());
+        editTextLabourCost.setText(String.valueOf(project.getLabourCost()));
+        editTextLabourPercent.setText(String.valueOf(project.getLabourPercentage()));
+        editTextRules.setText(project.getRulesOfEngagement());
     }
 
     private void saveProject(View view) {
@@ -78,14 +113,26 @@ public class AddProjectFragment extends Fragment {
             } catch (NumberFormatException ignored) {}
         }
 
-        Project project = new Project(name, location, description, clientName, clientContact);
-        project.setLabourCost(labourCost);
-        project.setLabourPercentage(labourPercent);
-        project.setRulesOfEngagement(rules);
-        
-        projectViewModel.insert(project);
+        if (projectId != -1 && existingProject != null) {
+            existingProject.setName(name);
+            existingProject.setLocation(location);
+            existingProject.setDescription(description);
+            existingProject.setClientName(clientName);
+            existingProject.setClientContact(clientContact);
+            existingProject.setLabourCost(labourCost);
+            existingProject.setLabourPercentage(labourPercent);
+            existingProject.setRulesOfEngagement(rules);
+            projectViewModel.update(existingProject);
+            Snackbar.make(view, "Project updated successfully", Snackbar.LENGTH_SHORT).show();
+        } else {
+            Project project = new Project(name, location, description, clientName, clientContact);
+            project.setLabourCost(labourCost);
+            project.setLabourPercentage(labourPercent);
+            project.setRulesOfEngagement(rules);
+            projectViewModel.insert(project);
+            Snackbar.make(view, "Project created successfully", Snackbar.LENGTH_SHORT).show();
+        }
 
-        Snackbar.make(view, "Project created successfully", Snackbar.LENGTH_SHORT).show();
         Navigation.findNavController(view).navigateUp();
     }
 }

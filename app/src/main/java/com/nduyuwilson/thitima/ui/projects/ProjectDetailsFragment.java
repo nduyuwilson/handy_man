@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import com.nduyuwilson.thitima.util.Formatter;
@@ -43,6 +44,7 @@ public class ProjectDetailsFragment extends Fragment {
     private Project currentProject;
     private List<ProjectItem> currentProjectItems;
     private Map<Integer, Item> itemMap = new HashMap<>();
+    private Map<Integer, ItemVariant> variantMap = new HashMap<>();
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -89,12 +91,17 @@ public class ProjectDetailsFragment extends Fragment {
             adapter.submitList(projectItems);
             calculateTotals(projectItems);
             
-            // Pre-load items for PDF generation
+            // Pre-load items and variants for PDF generation
             if (projectItems != null) {
                 for (ProjectItem pi : projectItems) {
                     itemViewModel.getItemById(pi.getItemId()).observe(getViewLifecycleOwner(), item -> {
                         if (item != null) itemMap.put(item.getId(), item);
                     });
+                    if (pi.getVariantId() != null) {
+                        itemViewModel.getVariantById(pi.getVariantId()).observe(getViewLifecycleOwner(), variant -> {
+                            if (variant != null) variantMap.put(variant.getId(), variant);
+                        });
+                    }
                 }
             }
         });
@@ -112,8 +119,24 @@ public class ProjectDetailsFragment extends Fragment {
         textViewTitle.setText(project.getName());
         textViewLocation.setText(project.getLocation());
         textViewClient.setText(String.format("%s\n%s", project.getClientName(), project.getClientContact()));
-        currentLabourCost = project.getLabourCost();
-        textViewLabour.setText(Formatter.formatPrice(requireContext(), currentLabourCost));
+        
+        // Final labour calculation logic
+        projectViewModel.getItemsForProject(projectId).observe(getViewLifecycleOwner(), items -> {
+            double materialTotal = 0;
+            if (items != null) {
+                for (ProjectItem item : items) {
+                    materialTotal += (item.getQuantity() * item.getQuotedPrice());
+                }
+            }
+            if (project.getLabourPercentage() > 0) {
+                currentLabourCost = (project.getLabourPercentage() / 100.0) * materialTotal;
+            } else {
+                currentLabourCost = project.getLabourCost();
+            }
+            textViewLabour.setText(Formatter.formatPrice(requireContext(), currentLabourCost));
+            textViewGrandTotal.setText(Formatter.formatPrice(requireContext(), materialTotal + currentLabourCost));
+        });
+
         textViewRules.setText(project.getRulesOfEngagement() != null && !project.getRulesOfEngagement().isEmpty() ? 
                 project.getRulesOfEngagement() : "N/A");
     }
@@ -126,6 +149,16 @@ public class ProjectDetailsFragment extends Fragment {
             }
         }
         textViewMaterialTotal.setText(Formatter.formatPrice(requireContext(), materialTotal));
+        
+        if (currentProject != null) {
+            if (currentProject.getLabourPercentage() > 0) {
+                currentLabourCost = (currentProject.getLabourPercentage() / 100.0) * materialTotal;
+            } else {
+                currentLabourCost = currentProject.getLabourCost();
+            }
+        }
+        
+        textViewLabour.setText(Formatter.formatPrice(requireContext(), currentLabourCost));
         textViewGrandTotal.setText(Formatter.formatPrice(requireContext(), materialTotal + currentLabourCost));
     }
 
@@ -135,7 +168,7 @@ public class ProjectDetailsFragment extends Fragment {
             return;
         }
 
-        File pdfFile = PdfGenerator.generateInvoice(requireContext(), currentProject, currentProjectItems, itemMap);
+        File pdfFile = PdfGenerator.generateInvoice(requireContext(), currentProject, currentProjectItems, itemMap, variantMap);
         if (pdfFile != null) {
             Uri contentUri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", pdfFile);
             

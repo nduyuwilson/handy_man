@@ -7,21 +7,24 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 import com.nduyuwilson.thitima.data.dao.ItemDao;
+import com.nduyuwilson.thitima.data.dao.ItemVariantDao;
 import com.nduyuwilson.thitima.data.dao.ProjectDao;
 import com.nduyuwilson.thitima.data.dao.ProjectItemDao;
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities = {Item.class, Project.class, ProjectItem.class}, version = 1, exportSchema = false)
+@Database(entities = {Item.class, Project.class, ProjectItem.class, ItemVariant.class}, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ItemDao itemDao();
     public abstract ProjectDao projectDao();
     public abstract ProjectItemDao projectItemDao();
+    public abstract ItemVariantDao itemVariantDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
@@ -34,6 +37,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "thitima_database")
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }

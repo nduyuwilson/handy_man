@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -31,7 +32,17 @@ public class CatalogueFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewCatalogue);
+        // Changed to GridLayoutManager with 2 columns
+        recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        
         adapter = new CatalogueAdapter();
+        
+        adapter.setOnItemClickListener(item -> {
+            Bundle bundle = new Bundle();
+            bundle.putInt("itemId", item.getId());
+            Navigation.findNavController(view).navigate(R.id.action_navigation_catalogue_to_itemVariantsFragment, bundle);
+        });
+        
         recyclerView.setAdapter(adapter);
 
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);

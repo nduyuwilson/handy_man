@@ -6,17 +6,21 @@ import androidx.lifecycle.LiveData;
 
 import com.nduyuwilson.thitima.data.AppDatabase;
 import com.nduyuwilson.thitima.data.dao.ItemDao;
+import com.nduyuwilson.thitima.data.dao.ItemVariantDao;
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.entity.ItemVariant;
 
 import java.util.List;
 
 public class ItemRepository {
     private ItemDao mItemDao;
+    private ItemVariantDao mItemVariantDao;
     private LiveData<List<Item>> mAllItems;
 
     public ItemRepository(Application application) {
         AppDatabase db = AppDatabase.getDatabase(application);
         mItemDao = db.itemDao();
+        mItemVariantDao = db.itemVariantDao();
         mAllItems = mItemDao.getAllItems();
     }
 
@@ -44,5 +48,20 @@ public class ItemRepository {
 
     public LiveData<Item> getItemById(int id) {
         return mItemDao.getItemById(id);
+    }
+
+    // Item Variants
+    public LiveData<List<ItemVariant>> getVariantsForItem(int itemId) {
+        return mItemVariantDao.getVariantsForItem(itemId);
+    }
+
+    public LiveData<ItemVariant> getVariantById(int id) {
+        return mItemVariantDao.getVariantById(id);
+    }
+
+    public void insertVariant(ItemVariant variant) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mItemVariantDao.insert(variant);
+        });
     }
 }

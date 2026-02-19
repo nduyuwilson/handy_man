@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.repository.ItemRepository;
 
 import java.util.List;
@@ -39,5 +40,18 @@ public class ItemViewModel extends AndroidViewModel {
 
     public LiveData<Item> getItemById(int id) {
         return mRepository.getItemById(id);
+    }
+
+    // Item Variants
+    public LiveData<List<ItemVariant>> getVariantsForItem(int itemId) {
+        return mRepository.getVariantsForItem(itemId);
+    }
+
+    public LiveData<ItemVariant> getVariantById(int id) {
+        return mRepository.getVariantById(id);
+    }
+
+    public void insertVariant(ItemVariant variant) {
+        mRepository.insertVariant(variant);
     }
 }

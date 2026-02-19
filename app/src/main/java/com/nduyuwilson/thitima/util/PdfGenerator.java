@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat;
 
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 
@@ -27,7 +28,7 @@ import java.util.Map;
 
 public class PdfGenerator {
 
-    public static File generateInvoice(Context context, Project project, List<ProjectItem> projectItems, Map<Integer, Item> itemMap) {
+    public static File generateInvoice(Context context, Project project, List<ProjectItem> projectItems, Map<Integer, Item> itemMap, Map<Integer, ItemVariant> variantMap) {
         PdfDocument pdfDocument = new PdfDocument();
         Paint paint = new Paint();
         Paint titlePaint = new Paint();
@@ -42,7 +43,7 @@ public class PdfGenerator {
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        // Watermark - Fixed: Paint doesn't have setRotation, use Canvas.rotate instead
+        // Watermark
         Paint watermarkPaint = new Paint();
         watermarkPaint.setColor(Color.LTGRAY);
         watermarkPaint.setAlpha(30);
@@ -50,7 +51,7 @@ public class PdfGenerator {
         watermarkPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
         canvas.save();
-        canvas.rotate(-45, 297, 421); // Rotate -45 degrees around the center of the A4 page (595/2, 842/2)
+        canvas.rotate(-45, 297, 421);
         canvas.drawText(userName, 50, 421, watermarkPaint);
         canvas.restore();
 
@@ -114,11 +115,20 @@ public class PdfGenerator {
         if (projectItems != null) {
             for (ProjectItem pi : projectItems) {
                 Item item = itemMap.get(pi.getItemId());
-                String name = item != null ? item.getName() : "Unknown Item";
+                String baseName = item != null ? item.getName() : "Unknown Item";
+                String brandName = "";
+                if (pi.getVariantId() != null && variantMap != null) {
+                    ItemVariant variant = variantMap.get(pi.getVariantId());
+                    if (variant != null) {
+                        brandName = " (" + variant.getBrandName() + ")";
+                    }
+                }
+                
+                String fullName = baseName + brandName;
                 double total = pi.getQuantity() * pi.getQuotedPrice();
                 materialTotal += total;
 
-                canvas.drawText(name, x, y, paint);
+                canvas.drawText(fullName, x, y, paint);
                 canvas.drawText(String.valueOf(pi.getQuantity()), x + 280, y, paint);
                 canvas.drawText(Formatter.formatNumber(pi.getQuotedPrice()), x + 330, y, paint);
                 canvas.drawText(Formatter.formatNumber(total), x + 450, y, paint);

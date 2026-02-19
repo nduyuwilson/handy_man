@@ -20,8 +20,9 @@ public class ProjectItem {
     private int id;
     private int projectId;
     private int itemId;
+    private Integer variantId; // Optional: reference to the selected brand variant
     private int quantity;
-    private double quotedPrice; // Selling price at the time of quotation
+    private double quotedPrice;
 
     public ProjectItem(int projectId, int itemId, int quantity, double quotedPrice) {
         this.projectId = projectId;
@@ -37,6 +38,8 @@ public class ProjectItem {
     public void setProjectId(int projectId) { this.projectId = projectId; }
     public int getItemId() { return itemId; }
     public void setItemId(int itemId) { this.itemId = itemId; }
+    public Integer getVariantId() { return variantId; }
+    public void setVariantId(Integer variantId) { this.variantId = variantId; }
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public double getQuotedPrice() { return quotedPrice; }

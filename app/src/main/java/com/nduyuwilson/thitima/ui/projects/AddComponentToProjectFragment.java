@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,15 +14,22 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import com.nduyuwilson.thitima.ui.catalogue.CatalogueAdapter;
+import com.nduyuwilson.thitima.ui.catalogue.ItemVariantAdapter;
 import com.nduyuwilson.thitima.viewmodel.ItemViewModel;
 import com.nduyuwilson.thitima.viewmodel.ProjectViewModel;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AddComponentToProjectFragment extends Fragment {
 
@@ -51,17 +59,53 @@ public class AddComponentToProjectFragment extends Fragment {
         projectViewModel = new ViewModelProvider(this).get(ProjectViewModel.class);
 
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewSelectItems);
+        recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         
         CatalogueAdapter adapter = new CatalogueAdapter();
-        adapter.setOnItemClickListener(item -> showQuantityDialog(item, view));
+        adapter.setOnItemClickListener(item -> {
+            itemViewModel.getVariantsForItem(item.getId()).observe(getViewLifecycleOwner(), variants -> {
+                if (variants == null || variants.isEmpty()) {
+                    showQuantityDialog(item, null, view);
+                } else {
+                    showVariantSelectionGrid(item, variants, view);
+                }
+            });
+        });
         recyclerView.setAdapter(adapter);
 
         itemViewModel.getAllItems().observe(getViewLifecycleOwner(), adapter::submitList);
     }
 
-    private void showQuantityDialog(Item item, View view) {
+    private void showVariantSelectionGrid(Item item, List<ItemVariant> variants, View view) {
+        // Create a custom view for the dialog with a RecyclerView
+        RecyclerView gridRecyclerView = new RecyclerView(requireContext());
+        gridRecyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        gridRecyclerView.setPadding(16, 16, 16, 16);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select Brand for " + item.getName())
+                .setView(gridRecyclerView)
+                .setNegativeButton("Cancel", null)
+                .create();
+
+        ItemVariantAdapter adapter = new ItemVariantAdapter(variant -> {
+            dialog.dismiss();
+            showQuantityDialog(item, variant, view);
+        });
+        
+        // Add "Default" as a pseudo-variant if needed, or just list brands
+        adapter.submitList(variants);
+        gridRecyclerView.setAdapter(adapter);
+
+        dialog.show();
+    }
+
+    private void showQuantityDialog(Item item, ItemVariant variant, View view) {
+        String title = "Enter Quantity for " + (variant != null ? variant.getBrandName() : item.getName());
+        double price = variant != null ? variant.getSellingPrice() : item.getSellingPrice();
+
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("Enter Quantity for " + item.getName());
+        builder.setTitle(title);
 
         final EditText input = new EditText(requireContext());
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -74,9 +118,11 @@ public class AddComponentToProjectFragment extends Fragment {
                 try {
                     int qty = Integer.parseInt(qtyStr);
                     if (qty > 0) {
-                        ProjectItem projectItem = new ProjectItem(projectId, item.getId(), qty, item.getSellingPrice());
+                        ProjectItem projectItem = new ProjectItem(projectId, item.getId(), qty, price);
+                        if (variant != null) projectItem.setVariantId(variant.getId());
+                        
                         projectViewModel.insertProjectItem(projectItem);
-                        Snackbar.make(view, "Added " + qty + " x " + item.getName(), Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(view, "Added " + qty + " units", Snackbar.LENGTH_SHORT).show();
                         Navigation.findNavController(view).navigateUp();
                     }
                 } catch (NumberFormatException ignored) {}

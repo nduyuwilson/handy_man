@@ -51,6 +51,9 @@
         <action
             android:id="@+id/action_navigation_catalogue_to_addItemFragment"
             app:destination="@id/addItemFragment" />
+        <action
+            android:id="@+id/action_navigation_catalogue_to_itemVariantsFragment"
+            app:destination="@id/itemVariantsFragment" />
     </fragment>
 
     <fragment
@@ -58,6 +61,16 @@
         android:name="com.nduyuwilson.thitima.ui.catalogue.AddItemFragment"
         android:label="Add Item"
         tools:layout="@layout/fragment_add_item" />
+
+    <fragment
+        android:id="@+id/itemVariantsFragment"
+        android:name="com.nduyuwilson.thitima.ui.catalogue.ItemVariantsFragment"
+        android:label="Item Variants"
+        tools:layout="@layout/fragment_item_variants">
+        <argument
+            android:name="itemId"
+            app:argType="integer" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_settings"

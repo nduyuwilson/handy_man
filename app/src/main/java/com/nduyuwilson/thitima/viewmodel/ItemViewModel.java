@@ -54,4 +54,12 @@ public class ItemViewModel extends AndroidViewModel {
     public void insertVariant(ItemVariant variant) {
         mRepository.insertVariant(variant);
     }
+
+    public void updateVariant(ItemVariant variant) {
+        mRepository.updateVariant(variant);
+    }
+
+    public void deleteVariant(ItemVariant variant) {
+        mRepository.deleteVariant(variant);
+    }
 }

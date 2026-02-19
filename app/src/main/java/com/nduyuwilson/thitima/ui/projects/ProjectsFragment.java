@@ -10,7 +10,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
@@ -41,6 +43,9 @@ public class ProjectsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        Toolbar toolbar = view.findViewById(R.id.toolbar);
+        ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
+
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewProjects);
         adapter = new ProjectAdapter(project -> {
             Bundle bundle = new Bundle();
@@ -66,6 +71,7 @@ public class ProjectsFragment extends Fragment {
                 menuInflater.inflate(R.menu.search_menu, menu);
                 MenuItem searchItem = menu.findItem(R.id.action_search);
                 SearchView searchView = (SearchView) searchItem.getActionView();
+                searchView.setQueryHint("Search projects...");
                 
                 searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                     @Override

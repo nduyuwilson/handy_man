@@ -56,6 +56,9 @@ dependencies {
     // Glide
     implementation libs.glide
     annotationProcessor libs.glide.compiler
+    
+    // JSON
+    implementation libs.gson
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit

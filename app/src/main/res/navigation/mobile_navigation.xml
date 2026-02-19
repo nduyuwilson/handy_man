@@ -35,6 +35,9 @@
         <action
             android:id="@+id/action_projectDetailsFragment_to_addComponentToProjectFragment"
             app:destination="@id/addComponentToProjectFragment" />
+        <action
+            android:id="@+id/action_projectDetailsFragment_to_addProjectFragment"
+            app:destination="@id/addProjectFragment" />
     </fragment>
 
     <fragment
@@ -70,6 +73,9 @@
         <argument
             android:name="itemId"
             app:argType="integer" />
+        <action
+            android:id="@+id/action_itemVariantsFragment_to_addItemFragment"
+            app:destination="@id/addItemFragment" />
     </fragment>
 
     <fragment

@@ -20,13 +20,19 @@ import java.util.Locale;
 
 public class ProjectItemAdapter extends ListAdapter<ProjectItem, ProjectItemAdapter.ProjectItemViewHolder> {
 
+    public interface OnProjectItemClickListener {
+        void onProjectItemClick(ProjectItem projectItem);
+    }
+
     private final ItemViewModel itemViewModel;
     private final LifecycleOwner lifecycleOwner;
+    private final OnProjectItemClickListener listener;
 
-    protected ProjectItemAdapter(ItemViewModel itemViewModel, LifecycleOwner lifecycleOwner) {
+    protected ProjectItemAdapter(ItemViewModel itemViewModel, LifecycleOwner lifecycleOwner, OnProjectItemClickListener listener) {
         super(DIFF_CALLBACK);
         this.itemViewModel = itemViewModel;
         this.lifecycleOwner = lifecycleOwner;
+        this.listener = listener;
     }
 
     private static final DiffUtil.ItemCallback<ProjectItem> DIFF_CALLBACK = new DiffUtil.ItemCallback<ProjectItem>() {
@@ -56,14 +62,12 @@ public class ProjectItemAdapter extends ListAdapter<ProjectItem, ProjectItemAdap
         
         itemViewModel.getItemById(projectItem.getItemId()).observe(lifecycleOwner, item -> {
             if (item != null) {
-                String displayName = item.getName();
-                
                 // If there's a variant, we need to show the variant's brand name
                 if (projectItem.getVariantId() != null) {
                     itemViewModel.getVariantsForItem(item.getId()).observe(lifecycleOwner, variants -> {
                         if (variants != null) {
                             for (com.nduyuwilson.thitima.data.entity.ItemVariant v : variants) {
-                                if (v.getId() == projectItem.getVariantId()) {
+                                if (v.getId() == projectItem.getVariantId().intValue()) {
                                     holder.textViewName.setText(item.getName() + " (" + v.getBrandName() + ")");
                                     break;
                                 }
@@ -71,7 +75,7 @@ public class ProjectItemAdapter extends ListAdapter<ProjectItem, ProjectItemAdap
                         }
                     });
                 } else {
-                    holder.textViewName.setText(displayName);
+                    holder.textViewName.setText(item.getName());
                 }
 
                 holder.textViewDetails.setText(String.format(Locale.getDefault(), "Qty: %d x %s", 
@@ -79,6 +83,8 @@ public class ProjectItemAdapter extends ListAdapter<ProjectItem, ProjectItemAdap
                 holder.textViewTotal.setText(Formatter.formatPrice(holder.itemView.getContext(), projectItem.getQuantity() * projectItem.getQuotedPrice()));
             }
         });
+
+        holder.itemView.setOnClickListener(v -> listener.onProjectItemClick(projectItem));
     }
 
     static class ProjectItemViewHolder extends RecyclerView.ViewHolder {

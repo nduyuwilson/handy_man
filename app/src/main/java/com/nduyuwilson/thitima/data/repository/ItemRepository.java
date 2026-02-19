@@ -64,4 +64,16 @@ public class ItemRepository {
             mItemVariantDao.insert(variant);
         });
     }
+
+    public void updateVariant(ItemVariant variant) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mItemVariantDao.update(variant);
+        });
+    }
+
+    public void deleteVariant(ItemVariant variant) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mItemVariantDao.delete(variant);
+        });
+    }
 }

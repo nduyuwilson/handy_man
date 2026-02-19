@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
@@ -13,7 +14,7 @@ import java.util.List;
 
 @Dao
 public interface ProjectDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(Project project);
 
     @Update
@@ -25,6 +26,12 @@ public interface ProjectDao {
     @Query("SELECT * FROM projects ORDER BY createdAt DESC")
     LiveData<List<Project>> getAllProjects();
 
+    @Query("SELECT * FROM projects ORDER BY createdAt DESC")
+    List<Project> getAllProjectsSync();
+
     @Query("SELECT * FROM projects WHERE id = :id")
     LiveData<Project> getProjectById(int id);
+
+    @Query("DELETE FROM projects")
+    void deleteAll();
 }

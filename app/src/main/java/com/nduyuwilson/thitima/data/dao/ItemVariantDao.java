@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
@@ -13,7 +14,7 @@ import java.util.List;
 
 @Dao
 public interface ItemVariantDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(ItemVariant variant);
 
     @Update
@@ -27,4 +28,10 @@ public interface ItemVariantDao {
 
     @Query("SELECT * FROM item_variants WHERE id = :id")
     LiveData<ItemVariant> getVariantById(int id);
+
+    @Query("SELECT * FROM item_variants")
+    List<ItemVariant> getAllVariantsSync();
+
+    @Query("DELETE FROM item_variants")
+    void deleteAll();
 }

@@ -8,6 +8,9 @@ import com.nduyuwilson.thitima.data.dao.ProjectItemDao;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class ProjectRepository {
     private ProjectDao mProjectDao;
@@ -56,5 +59,28 @@ public class ProjectRepository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             mProjectItemDao.insert(projectItem);
         });
+    }
+
+    public void updateProjectItem(ProjectItem projectItem) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mProjectItemDao.update(projectItem);
+        });
+    }
+
+    public void deleteProjectItem(ProjectItem projectItem) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mProjectItemDao.delete(projectItem);
+        });
+    }
+
+    public ProjectItem getExistingProjectItem(int projectId, int itemId, Integer variantId) {
+        Future<ProjectItem> future = AppDatabase.databaseWriteExecutor.submit(() -> 
+            mProjectItemDao.getExistingItem(projectId, itemId, variantId)
+        );
+        try {
+            return future.get();
+        } catch (ExecutionException | InterruptedException e) {
+            return null;
+        }
     }
 }

@@ -1,28 +1,55 @@
 package com.nduyuwilson.thitima.ui.settings;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
+import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.repository.BackupRepository;
+import com.nduyuwilson.thitima.viewmodel.ItemViewModel;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
     private TextInputEditText editTextBusinessName, editTextUserName, editTextUserNumber, editTextBankDetails, editTextPaybill, editTextPaybillAccount, editTextTillNumber;
     private MaterialButton buttonEditProfile, buttonSaveProfile;
+    private ItemViewModel itemViewModel;
+    private BackupRepository backupRepository;
+
+    private final ActivityResultLauncher<String> mGetBackupFile = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri != null) {
+                    confirmRestore(uri);
+                }
+            }
+    );
 
     @Nullable
     @Override
@@ -35,6 +62,8 @@ public class SettingsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         
         sharedPreferences = requireActivity().getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
+        backupRepository = new BackupRepository(requireActivity().getApplication());
 
         editTextBusinessName = view.findViewById(R.id.editTextBusinessName);
         editTextUserName = view.findViewById(R.id.editTextUserName);
@@ -61,6 +90,15 @@ public class SettingsFragment extends Fragment {
 
         MaterialButton buttonCurrency = view.findViewById(R.id.buttonCurrency);
         buttonCurrency.setOnClickListener(v -> showCurrencyDialog());
+
+        MaterialButton buttonExport = view.findViewById(R.id.buttonExport);
+        buttonExport.setOnClickListener(v -> exportCatalogueToCsv());
+
+        MaterialButton buttonBackup = view.findViewById(R.id.buttonBackup);
+        buttonBackup.setOnClickListener(v -> performFullBackup());
+
+        MaterialButton buttonRestore = view.findViewById(R.id.buttonRestore);
+        buttonRestore.setOnClickListener(v -> mGetBackupFile.launch("application/zip"));
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
             new MaterialAlertDialogBuilder(requireContext())
@@ -106,6 +144,98 @@ public class SettingsFragment extends Fragment {
         editor.putString("till_number", editTextTillNumber.getText().toString().trim());
         editor.apply();
         Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show();
+    }
+
+    private void exportCatalogueToCsv() {
+        itemViewModel.getAllItems().observe(getViewLifecycleOwner(), items -> {
+            if (items == null || items.isEmpty()) {
+                Toast.makeText(requireContext(), "No items to export", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            StringBuilder csvData = new StringBuilder();
+            csvCatalogueHeader(csvData);
+
+            for (Item item : items) {
+                csvData.append(item.getId()).append(",")
+                        .append("\"").append(item.getName()).append("\",")
+                        .append("\"").append(item.getDescription().replace("\n", " ")).append("\",")
+                        .append(item.getBuyingPrice()).append(",")
+                        .append(item.getSellingPrice()).append("\n");
+            }
+
+            try {
+                File file = new File(requireContext().getExternalCacheDir(), "Catalogue_Export.csv");
+                FileOutputStream out = new FileOutputStream(file);
+                out.write(csvData.toString().getBytes());
+                out.close();
+
+                Uri contentUri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setType("text/csv");
+                intent.putExtra(Intent.EXTRA_SUBJECT, "Thitima Catalogue Export");
+                intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(Intent.createChooser(intent, "Export Catalogue via"));
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(requireContext(), "Export failed", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void csvCatalogueHeader(StringBuilder sb) {
+        sb.append("ID,Item Name,Description,Buying Price,Selling Price\n");
+    }
+
+    private void performFullBackup() {
+        Future<File> backupFuture = backupRepository.createFullBackupZip();
+        new Thread(() -> {
+            try {
+                File zipFile = backupFuture.get();
+                requireActivity().runOnUiThread(() -> {
+                    if (zipFile != null && zipFile.exists()) {
+                        Uri contentUri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", zipFile);
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.setType("application/zip");
+                        intent.putExtra(Intent.EXTRA_SUBJECT, "Thitima Full Data & Media Backup");
+                        intent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(Intent.createChooser(intent, "Save/Share Backup via"));
+                    } else {
+                        Toast.makeText(requireContext(), "Backup failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } catch (InterruptedException | ExecutionException e) {
+                requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(), "Backup error", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private void confirmRestore(Uri uri) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Restore Data & Media")
+                .setMessage("Warning: Restoring will overwrite all current data AND images. This cannot be undone. Continue?")
+                .setPositiveButton("Restore Now", (dialog, which) -> {
+                    backupRepository.restoreFromZip(requireContext(), uri, new BackupRepository.RestoreCallback() {
+                        @Override
+                        public void onSuccess() {
+                            requireActivity().runOnUiThread(() -> {
+                                Toast.makeText(requireContext(), "Full restoration successful", Toast.LENGTH_LONG).show();
+                            });
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            requireActivity().runOnUiThread(() -> {
+                                Toast.makeText(requireContext(), "Restoration failed: " + message, Toast.LENGTH_LONG).show();
+                            });
+                        }
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void showThemeDialog() {

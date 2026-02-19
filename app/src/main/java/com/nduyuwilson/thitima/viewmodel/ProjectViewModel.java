@@ -50,4 +50,16 @@ public class ProjectViewModel extends AndroidViewModel {
     public void insertProjectItem(ProjectItem projectItem) {
         mRepository.insertProjectItem(projectItem);
     }
+
+    public void updateProjectItem(ProjectItem projectItem) {
+        mRepository.updateProjectItem(projectItem);
+    }
+
+    public void deleteProjectItem(ProjectItem projectItem) {
+        mRepository.deleteProjectItem(projectItem);
+    }
+
+    public ProjectItem getExistingProjectItem(int projectId, int itemId, Integer variantId) {
+        return mRepository.getExistingProjectItem(projectId, itemId, variantId);
+    }
 }

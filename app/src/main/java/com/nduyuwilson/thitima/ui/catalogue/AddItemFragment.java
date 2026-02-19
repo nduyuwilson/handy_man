@@ -23,6 +23,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.util.ImageUtils;
 import com.nduyuwilson.thitima.viewmodel.ItemViewModel;
 
 public class AddItemFragment extends Fragment {
@@ -38,8 +39,12 @@ public class AddItemFragment extends Fragment {
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    selectedImageUri = uri.toString();
-                    imageViewPreview.setImageURI(uri);
+                    // Save to internal storage immediately to ensure persistence
+                    String internalPath = ImageUtils.saveImageToInternalStorage(requireContext(), uri);
+                    if (!internalPath.isEmpty()) {
+                        selectedImageUri = internalPath;
+                        imageViewPreview.setImageURI(Uri.parse(internalPath));
+                    }
                 }
             }
     );
@@ -95,7 +100,9 @@ public class AddItemFragment extends Fragment {
         editTextBuyingPrice.setText(String.valueOf(item.getBuyingPrice()));
         editTextSellingPrice.setText(String.valueOf(item.getSellingPrice()));
         selectedImageUri = item.getImageUri();
-        Glide.with(this).load(selectedImageUri).placeholder(R.drawable.ic_splash_logo).into(imageViewPreview);
+        if (!TextUtils.isEmpty(selectedImageUri)) {
+            Glide.with(this).load(Uri.parse(selectedImageUri)).placeholder(R.drawable.ic_splash_logo).into(imageViewPreview);
+        }
     }
 
     private void saveItem(View view) {

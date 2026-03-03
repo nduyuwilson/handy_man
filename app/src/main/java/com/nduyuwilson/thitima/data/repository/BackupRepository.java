@@ -6,8 +6,10 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.nduyuwilson.thitima.data.AppDatabase;
 import com.nduyuwilson.thitima.data.model.BackupData;
+import com.nduyuwilson.thitima.data.model.PaymentMethod;
 import com.nduyuwilson.thitima.data.model.SettingsData;
 
 import java.io.BufferedInputStream;
@@ -18,6 +20,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -49,12 +54,14 @@ public class BackupRepository {
             settings.businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
             settings.userName = prefs.getString("user_name", "");
             settings.userNumber = prefs.getString("user_number", "");
-            settings.bankDetails = prefs.getString("bank_details", "");
-            settings.paybillNumber = prefs.getString("paybill_number", "");
-            settings.paybillAccount = prefs.getString("paybill_account", "");
-            settings.tillNumber = prefs.getString("till_number", "");
             settings.themeMode = prefs.getInt("theme_mode", 2);
             settings.currencySymbol = prefs.getString("currency_symbol", "Ksh");
+            
+            // Backup payment methods list
+            String paymentJson = prefs.getString("payment_methods_json", "[]");
+            Type listType = new TypeToken<ArrayList<PaymentMethod>>(){}.getType();
+            settings.paymentMethods = new Gson().fromJson(paymentJson, listType);
+            
             data.settings = settings;
 
             String json = new Gson().toJson(data);
@@ -149,12 +156,14 @@ public class BackupRepository {
                             editor.putString("business_name", data.settings.businessName);
                             editor.putString("user_name", data.settings.userName);
                             editor.putString("user_number", data.settings.userNumber);
-                            editor.putString("bank_details", data.settings.bankDetails);
-                            editor.putString("paybill_number", data.settings.paybillNumber);
-                            editor.putString("paybill_account", data.settings.paybillAccount);
-                            editor.putString("till_number", data.settings.tillNumber);
                             editor.putInt("theme_mode", data.settings.themeMode);
                             editor.putString("currency_symbol", data.settings.currencySymbol);
+                            
+                            // Restore payment methods list
+                            if (data.settings.paymentMethods != null) {
+                                editor.putString("payment_methods_json", new Gson().toJson(data.settings.paymentMethods));
+                            }
+                            
                             editor.apply();
                         }
                     });

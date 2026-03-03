@@ -11,16 +11,21 @@ import android.graphics.pdf.PdfDocument;
 import android.graphics.drawable.Drawable;
 import androidx.core.content.ContextCompat;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
 import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
+import com.nduyuwilson.thitima.data.model.PaymentMethod;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -39,22 +44,22 @@ public class PdfGenerator {
         String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
         String userName = prefs.getString("user_name", "Professional Installer");
         String userNumber = prefs.getString("user_number", "");
-        String bankDetails = prefs.getString("bank_details", "");
-        String paybillNumber = prefs.getString("paybill_number", "");
-        String paybillAccount = prefs.getString("paybill_account", "");
-        String tillNumber = prefs.getString("till_number", "");
         String currency = Formatter.getCurrencySymbol(context);
+
+        String paymentMethodsJson = prefs.getString("payment_methods_json", "[]");
+        Type listType = new TypeToken<ArrayList<PaymentMethod>>(){}.getType();
+        List<PaymentMethod> paymentMethods = new Gson().fromJson(paymentMethodsJson, listType);
 
         // A4 size: 595 x 842 points
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, 842, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        // 1. Draw Padded Themed Header Background (Centered Blue Bar)
+        // 1. Header Background
         accentPaint.setColor(Color.rgb(25, 118, 210)); 
         canvas.drawRect(75, 15, 520, 75, accentPaint);
 
-        // 2. Watermark - Name and Phone on Different Lines
+        // 2. Watermark
         Paint watermarkPaint = new Paint();
         watermarkPaint.setColor(Color.LTGRAY);
         watermarkPaint.setAlpha(15);
@@ -69,27 +74,23 @@ public class PdfGenerator {
         }
         canvas.restore();
 
-        // 3. Draw Icons on both sides of the Title Bar (Clear, no blue tint)
+        // 3. Icons
         Drawable drawable = ContextCompat.getDrawable(context, R.drawable.elec_man);
         if (drawable != null) {
-            // Left Icon - Original sharp colors
             drawable.setTintList(null); 
             drawable.setBounds(15, 20, 65, 70);
             drawable.draw(canvas);
-            
-            // Right Icon - Original sharp colors
             drawable.setBounds(530, 20, 580, 70);
             drawable.draw(canvas);
         }
 
-        // 4. Header Title (Centered in the Blue strip)
+        // 4. Header Title
         titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         titlePaint.setTextSize(24);
         titlePaint.setColor(Color.WHITE);
         titlePaint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(businessName.toUpperCase(), 297, 55, titlePaint);
         
-        // Sub-header info
         int x = 40;
         int y = 110;
         paint.setTextAlign(Paint.Align.LEFT);
@@ -194,7 +195,7 @@ public class PdfGenerator {
         canvas.drawText("GRAND TOTAL:", x + 280, y, paint);
         canvas.drawText(currency + " " + Formatter.formatNumber(materialTotal + labourCost), x + 420, y, paint);
 
-        // Payments
+        // Multiple Payment Options with Line Separators
         y += 50;
         paint.setColor(Color.BLACK);
         paint.setTextSize(12);
@@ -203,23 +204,19 @@ public class PdfGenerator {
         y += 20;
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
         
-        boolean hasPay = false;
-        if (!bankDetails.isEmpty()) {
-            canvas.drawText("BANK: " + bankDetails, x, y, paint);
+        if (paymentMethods != null && !paymentMethods.isEmpty()) {
+            for (int i = 0; i < paymentMethods.size(); i++) {
+                PaymentMethod pm = paymentMethods.get(i);
+                canvas.drawText(pm.getDisplayText(), x, y, paint);
+                y += 15;
+                if (i < paymentMethods.size() - 1) {
+                    canvas.drawLine(x, y - 5, x + 300, y - 5, paint);
+                    y += 10;
+                }
+            }
+        } else {
+            canvas.drawText("Contact issuer for payment details.", x, y, paint);
             y += 15;
-            hasPay = true;
-        }
-        if (!paybillNumber.isEmpty()) {
-            String pb = "M-PESA PAYBILL: " + paybillNumber;
-            if (!paybillAccount.isEmpty()) pb += " | ACCOUNT: " + paybillAccount;
-            canvas.drawText(pb, x, y, paint);
-            y += 15;
-            hasPay = true;
-        }
-        if (!tillNumber.isEmpty()) {
-            canvas.drawText("M-PESA TILL: " + tillNumber, x, y, paint);
-            y += 15;
-            hasPay = true;
         }
 
         // Rules
@@ -238,7 +235,7 @@ public class PdfGenerator {
              canvas.drawText(rules, x, y, paint);
         }
 
-        // 6. Draw Themed Footer with Developer Branding
+        // 6. Footer
         canvas.drawRect(0, 805, 595, 842, accentPaint);
         footerPaint.setColor(Color.WHITE);
         footerPaint.setTextSize(8);

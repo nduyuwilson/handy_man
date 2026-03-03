@@ -5,9 +5,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -18,18 +21,24 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.model.PaymentMethod;
 import com.nduyuwilson.thitima.data.repository.BackupRepository;
 import com.nduyuwilson.thitima.viewmodel.ItemViewModel;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -37,8 +46,11 @@ import java.util.concurrent.Future;
 public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
-    private TextInputEditText editTextBusinessName, editTextUserName, editTextUserNumber, editTextBankDetails, editTextPaybill, editTextPaybillAccount, editTextTillNumber;
-    private MaterialButton buttonEditProfile, buttonSaveProfile;
+    private TextInputEditText editTextBusinessName, editTextUserName, editTextUserNumber;
+    private MaterialButton buttonEditProfile, buttonSaveProfile, buttonAddPaymentMethod;
+    private RecyclerView recyclerViewPaymentMethods;
+    private PaymentMethodAdapter paymentAdapter;
+    private List<PaymentMethod> paymentMethods = new ArrayList<>();
     private ItemViewModel itemViewModel;
     private BackupRepository backupRepository;
 
@@ -68,14 +80,13 @@ public class SettingsFragment extends Fragment {
         editTextBusinessName = view.findViewById(R.id.editTextBusinessName);
         editTextUserName = view.findViewById(R.id.editTextUserName);
         editTextUserNumber = view.findViewById(R.id.editTextUserNumber);
-        editTextBankDetails = view.findViewById(R.id.editTextBankDetails);
-        editTextPaybill = view.findViewById(R.id.editTextPaybill);
-        editTextPaybillAccount = view.findViewById(R.id.editTextPaybillAccount);
-        editTextTillNumber = view.findViewById(R.id.editTextTillNumber);
         
+        recyclerViewPaymentMethods = view.findViewById(R.id.recyclerViewPaymentMethods);
+        buttonAddPaymentMethod = view.findViewById(R.id.buttonAddPaymentMethod);
         buttonEditProfile = view.findViewById(R.id.buttonEditProfile);
         buttonSaveProfile = view.findViewById(R.id.buttonSaveProfile);
 
+        setupPaymentRecyclerView();
         loadProfileData();
 
         buttonEditProfile.setOnClickListener(v -> toggleEditMode(true));
@@ -85,20 +96,13 @@ public class SettingsFragment extends Fragment {
             toggleEditMode(false);
         });
 
-        MaterialButton buttonAppearance = view.findViewById(R.id.buttonAppearance);
-        buttonAppearance.setOnClickListener(v -> showThemeDialog());
+        buttonAddPaymentMethod.setOnClickListener(v -> showAddPaymentMethodDialog());
 
-        MaterialButton buttonCurrency = view.findViewById(R.id.buttonCurrency);
-        buttonCurrency.setOnClickListener(v -> showCurrencyDialog());
-
-        MaterialButton buttonExport = view.findViewById(R.id.buttonExport);
-        buttonExport.setOnClickListener(v -> exportCatalogueToCsv());
-
-        MaterialButton buttonBackup = view.findViewById(R.id.buttonBackup);
-        buttonBackup.setOnClickListener(v -> performFullBackup());
-
-        MaterialButton buttonRestore = view.findViewById(R.id.buttonRestore);
-        buttonRestore.setOnClickListener(v -> mGetBackupFile.launch("application/zip"));
+        view.findViewById(R.id.buttonAppearance).setOnClickListener(v -> showThemeDialog());
+        view.findViewById(R.id.buttonCurrency).setOnClickListener(v -> showCurrencyDialog());
+        view.findViewById(R.id.buttonExport).setOnClickListener(v -> exportCatalogueToCsv());
+        view.findViewById(R.id.buttonBackup).setOnClickListener(v -> performFullBackup());
+        view.findViewById(R.id.buttonRestore).setOnClickListener(v -> mGetBackupFile.launch("application/zip"));
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
             new MaterialAlertDialogBuilder(requireContext())
@@ -110,27 +114,35 @@ public class SettingsFragment extends Fragment {
         });
     }
 
+    private void setupPaymentRecyclerView() {
+        paymentAdapter = new PaymentMethodAdapter();
+        paymentAdapter.setOnDeleteClickListener(position -> {
+            paymentMethods.remove(position);
+            paymentAdapter.notifyDataSetChanged();
+        });
+        recyclerViewPaymentMethods.setAdapter(paymentAdapter);
+    }
+
     private void loadProfileData() {
         editTextBusinessName.setText(sharedPreferences.getString("business_name", "THITIMA ELECTRICALS"));
         editTextUserName.setText(sharedPreferences.getString("user_name", ""));
         editTextUserNumber.setText(sharedPreferences.getString("user_number", ""));
-        editTextBankDetails.setText(sharedPreferences.getString("bank_details", ""));
-        editTextPaybill.setText(sharedPreferences.getString("paybill_number", ""));
-        editTextPaybillAccount.setText(sharedPreferences.getString("paybill_account", ""));
-        editTextTillNumber.setText(sharedPreferences.getString("till_number", ""));
+        
+        String json = sharedPreferences.getString("payment_methods_json", "[]");
+        Type type = new TypeToken<List<PaymentMethod>>() {}.getType();
+        paymentMethods = new Gson().fromJson(json, type);
+        paymentAdapter.setMethods(paymentMethods);
     }
 
     private void toggleEditMode(boolean editing) {
         editTextBusinessName.setEnabled(editing);
         editTextUserName.setEnabled(editing);
         editTextUserNumber.setEnabled(editing);
-        editTextBankDetails.setEnabled(editing);
-        editTextPaybill.setEnabled(editing);
-        editTextPaybillAccount.setEnabled(editing);
-        editTextTillNumber.setEnabled(editing);
         
         buttonEditProfile.setVisibility(editing ? View.GONE : View.VISIBLE);
         buttonSaveProfile.setVisibility(editing ? View.VISIBLE : View.GONE);
+        buttonAddPaymentMethod.setVisibility(editing ? View.VISIBLE : View.GONE);
+        paymentAdapter.setEditing(editing);
     }
 
     private void saveProfileData() {
@@ -138,12 +150,113 @@ public class SettingsFragment extends Fragment {
         editor.putString("business_name", editTextBusinessName.getText().toString().trim());
         editor.putString("user_name", editTextUserName.getText().toString().trim());
         editor.putString("user_number", editTextUserNumber.getText().toString().trim());
-        editor.putString("bank_details", editTextBankDetails.getText().toString().trim());
-        editor.putString("paybill_number", editTextPaybill.getText().toString().trim());
-        editor.putString("paybill_account", editTextPaybillAccount.getText().toString().trim());
-        editor.putString("till_number", editTextTillNumber.getText().toString().trim());
+        
+        String json = new Gson().toJson(paymentMethods);
+        editor.putString("payment_methods_json", json);
+        
         editor.apply();
         Toast.makeText(requireContext(), "Profile updated", Toast.LENGTH_SHORT).show();
+    }
+
+    private void showAddPaymentMethodDialog() {
+        String[] types = {"Bank Account", "M-Pesa Paybill", "M-Pesa Till"};
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select Payment Type")
+                .setItems(types, (dialog, which) -> {
+                    switch (which) {
+                        case 0: showBankDialog(); break;
+                        case 1: showPaybillDialog(); break;
+                        case 2: showTillDialog(); break;
+                    }
+                })
+                .show();
+    }
+
+    private void showBankDialog() {
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 24);
+
+        final EditText editBankName = new EditText(requireContext());
+        editBankName.setHint("Bank Name (e.g. KCB)");
+        layout.addView(editBankName);
+
+        final EditText editAccNumber = new EditText(requireContext());
+        editAccNumber.setHint("Account Number");
+        editAccNumber.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(editAccNumber);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Add Bank Account")
+                .setView(layout)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String bank = editBankName.getText().toString().trim();
+                    String acc = editAccNumber.getText().toString().trim();
+                    if (!bank.isEmpty() && !acc.isEmpty()) {
+                        paymentMethods.add(new PaymentMethod(PaymentMethod.Type.BANK, "Bank", acc, bank));
+                        paymentAdapter.notifyDataSetChanged();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showPaybillDialog() {
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 24);
+
+        final EditText editPaybill = new EditText(requireContext());
+        editPaybill.setHint("Paybill Number");
+        editPaybill.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(editPaybill);
+
+        final EditText editAcc = new EditText(requireContext());
+        editAcc.setHint("Account Name/Number");
+        layout.addView(editAcc);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Add M-Pesa Paybill")
+                .setView(layout)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String pb = editPaybill.getText().toString().trim();
+                    String acc = editAcc.getText().toString().trim();
+                    if (!pb.isEmpty() && !acc.isEmpty()) {
+                        paymentMethods.add(new PaymentMethod(PaymentMethod.Type.PAYBILL, "M-Pesa", pb, acc));
+                        paymentAdapter.notifyDataSetChanged();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showTillDialog() {
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 24);
+
+        final EditText editTill = new EditText(requireContext());
+        editTill.setHint("Till Number");
+        editTill.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(editTill);
+
+        final EditText editLabel = new EditText(requireContext());
+        editLabel.setHint("Label (e.g. Shop Name)");
+        layout.addView(editLabel);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Add M-Pesa Till")
+                .setView(layout)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String till = editTill.getText().toString().trim();
+                    String label = editLabel.getText().toString().trim();
+                    if (!till.isEmpty()) {
+                        paymentMethods.add(new PaymentMethod(PaymentMethod.Type.TILL, label, till, ""));
+                        paymentAdapter.notifyDataSetChanged();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void exportCatalogueToCsv() {
@@ -223,6 +336,7 @@ public class SettingsFragment extends Fragment {
                         public void onSuccess() {
                             requireActivity().runOnUiThread(() -> {
                                 Toast.makeText(requireContext(), "Full restoration successful", Toast.LENGTH_LONG).show();
+                                loadProfileData(); // Refresh UI
                             });
                         }
 

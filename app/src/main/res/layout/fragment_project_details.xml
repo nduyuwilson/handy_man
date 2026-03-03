@@ -15,9 +15,8 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="?attr/homeAsUpIndicator" />
+            app:navigationIcon="@drawable/ic_arrow_back" />
 
-        <!-- Merged Header Section within AppBarLayout -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,7 +25,7 @@
             android:paddingBottom="20dp">
 
             <TextView
-                android:id="@+id/textViewProjectTitle"
+                android:id="@+id/tvProjectTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Project Title"
@@ -48,7 +47,7 @@
                     app:tint="?android:attr/textColorSecondary" />
 
                 <TextView
-                    android:id="@+id/textViewProjectLocation"
+                    android:id="@+id/tvProjectLocation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
@@ -71,7 +70,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Status Card / Summary -->
+            <!-- Financial Dashboard Summary -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -84,52 +83,71 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="16dp"
-                    android:orientation="horizontal"
-                    android:baselineAligned="false">
+                    android:orientation="vertical">
 
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Grand Total"
-                            android:textAppearance="?attr/textAppearanceLabelLarge" />
-                        <TextView
-                            android:id="@+id/textViewGrandTotal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="$0.00"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textColor="?attr/colorPrimary"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                        android:text="Estimated Grand Total"
+                        android:textAppearance="?attr/textAppearanceLabelLarge" />
+                    
+                    <TextView
+                        android:id="@+id/tvGrandTotalTop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="$0.00"
+                        android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                        android:textColor="?attr/colorPrimary"
+                        android:textStyle="bold" />
 
                     <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:layout_marginHorizontal="16dp"
-                        android:background="?android:attr/dividerVertical" />
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="12dp"
+                        android:background="?android:attr/dividerHorizontal" />
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Labour"
-                            android:textAppearance="?attr/textAppearanceLabelLarge" />
-                        <TextView
-                            android:id="@+id/textViewLabourCost"
-                            android:layout_width="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Materials"
+                                android:textAppearance="?attr/textAppearanceLabelSmall" />
+                            <TextView
+                                android:id="@+id/tvMaterialTotalTop"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="$0.00"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="$0.00"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textStyle="bold" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Labour Total"
+                                android:textAppearance="?attr/textAppearanceLabelSmall" />
+                            <TextView
+                                android:id="@+id/tvLabourTotalTop"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="$0.00"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textStyle="bold" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -137,7 +155,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Client &amp; Site Details"
+                android:text="Client Information"
                 android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_marginBottom="8dp"/>
 
@@ -148,20 +166,14 @@
                 app:cardCornerRadius="12dp"
                 app:cardElevation="1dp">
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/tvClientDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/textViewClientDetails"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="John Doe\n+254 700 000 000"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:lineSpacingExtra="4dp" />
-                </LinearLayout>
+                    android:padding="16dp"
+                    android:text="John Doe\n+254 700 000 000"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:lineSpacingExtra="4dp" />
             </com.google.android.material.card.MaterialCardView>
 
             <RelativeLayout
@@ -195,6 +207,37 @@
                 tools:listitem="@layout/item_project_component"
                 android:layout_marginBottom="16dp"/>
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="Labour &amp; Activities"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+                
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonAddLabour"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="Add Labour"
+                    app:icon="@android:drawable/ic_input_add" />
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewLabourActivities"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_project_component"
+                android:layout_marginBottom="16dp"/>
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -218,7 +261,7 @@
                     <TableRow android:layout_marginBottom="8dp">
                         <TextView android:text="Material Total" android:textAppearance="?attr/textAppearanceBodyMedium" />
                         <TextView
-                            android:id="@+id/textViewMaterialTotal"
+                            android:id="@+id/tvMaterialTotalTable"
                             android:gravity="end"
                             android:text="$0.00"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
@@ -226,9 +269,9 @@
                     </TableRow>
 
                     <TableRow>
-                        <TextView android:text="Labour Cost" android:textAppearance="?attr/textAppearanceBodyMedium" />
+                        <TextView android:text="Labour Total" android:textAppearance="?attr/textAppearanceBodyMedium" />
                         <TextView
-                            android:id="@+id/textViewLabourCostRow"
+                            android:id="@+id/tvLabourTotalTable"
                             android:gravity="end"
                             android:text="$0.00"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
@@ -252,7 +295,7 @@
                 app:cardElevation="1dp">
 
                 <TextView
-                    android:id="@+id/textViewRules"
+                    android:id="@+id/tvRules"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="16dp"
@@ -266,7 +309,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="12dp"
-                android:text="Generate Professional PDF"
+                android:text="Generate Full Quotation PDF"
+                app:icon="@android:drawable/ic_menu_share"
+                app:cornerRadius="12dp"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonGenerateLabourInvoice"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:text="Generate Labour Only PDF"
                 app:icon="@android:drawable/ic_menu_share"
                 app:cornerRadius="12dp" />
 

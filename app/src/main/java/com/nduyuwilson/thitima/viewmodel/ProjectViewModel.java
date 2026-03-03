@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
+import com.nduyuwilson.thitima.data.entity.LabourActivity;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import com.nduyuwilson.thitima.data.repository.ProjectRepository;
@@ -61,5 +62,22 @@ public class ProjectViewModel extends AndroidViewModel {
 
     public ProjectItem getExistingProjectItem(int projectId, int itemId, Integer variantId) {
         return mRepository.getExistingProjectItem(projectId, itemId, variantId);
+    }
+
+    // Labour Activities
+    public LiveData<List<LabourActivity>> getActivitiesForProject(int projectId) {
+        return mRepository.getActivitiesForProject(projectId);
+    }
+
+    public void insertLabourActivity(LabourActivity activity) {
+        mRepository.insertLabourActivity(activity);
+    }
+
+    public void updateLabourActivity(LabourActivity activity) {
+        mRepository.updateLabourActivity(activity);
+    }
+
+    public void deleteLabourActivity(LabourActivity activity) {
+        mRepository.deleteLabourActivity(activity);
     }
 }

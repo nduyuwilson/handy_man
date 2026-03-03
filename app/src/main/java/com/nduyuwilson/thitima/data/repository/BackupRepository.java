@@ -48,6 +48,7 @@ public class BackupRepository {
             data.items = db.itemDao().getAllItemsSync();
             data.itemVariants = db.itemVariantDao().getAllVariantsSync();
             data.projectItems = db.projectItemDao().getAllProjectItemsSync();
+            data.labourActivities = db.labourActivityDao().getAllActivitiesSync();
             
             SharedPreferences prefs = application.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
             SettingsData settings = new SettingsData();
@@ -134,6 +135,7 @@ public class BackupRepository {
                     db.runInTransaction(() -> {
                         db.projectItemDao().deleteAll();
                         db.itemVariantDao().deleteAll();
+                        db.labourActivityDao().deleteAll();
                         db.projectDao().deleteAll();
                         db.itemDao().deleteAll();
 
@@ -149,6 +151,9 @@ public class BackupRepository {
                         if (data.projectItems != null) {
                             for (var pItem : data.projectItems) db.projectItemDao().insert(pItem);
                         }
+                        if (data.labourActivities != null) {
+                            for (var activity : data.labourActivities) db.labourActivityDao().insert(activity);
+                        }
                         
                         // Restore Settings
                         if (data.settings != null) {
@@ -159,7 +164,6 @@ public class BackupRepository {
                             editor.putInt("theme_mode", data.settings.themeMode);
                             editor.putString("currency_symbol", data.settings.currencySymbol);
                             
-                            // Restore payment methods list
                             if (data.settings.paymentMethods != null) {
                                 editor.putString("payment_methods_json", new Gson().toJson(data.settings.paymentMethods));
                             }

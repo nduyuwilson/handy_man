@@ -22,7 +22,12 @@ public class CatalogueAdapter extends ListAdapter<Item, CatalogueAdapter.Catalog
         void onItemClick(Item item);
     }
 
+    public interface OnItemLongClickListener {
+        void onItemLongClick(Item item);
+    }
+
     private OnItemClickListener listener;
+    private OnItemLongClickListener longClickListener;
 
     public CatalogueAdapter() {
         super(DIFF_CALLBACK);
@@ -30,6 +35,10 @@ public class CatalogueAdapter extends ListAdapter<Item, CatalogueAdapter.Catalog
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        this.longClickListener = listener;
     }
 
     private static final DiffUtil.ItemCallback<Item> DIFF_CALLBACK = new DiffUtil.ItemCallback<Item>() {
@@ -71,6 +80,14 @@ public class CatalogueAdapter extends ListAdapter<Item, CatalogueAdapter.Catalog
             if (listener != null) {
                 listener.onItemClick(item);
             }
+        });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            if (longClickListener != null) {
+                longClickListener.onItemLongClick(item);
+                return true;
+            }
+            return false;
         });
     }
 

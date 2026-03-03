@@ -7,6 +7,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +22,7 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
@@ -51,11 +53,17 @@ public class CatalogueFragment extends Fragment {
         recyclerView.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         
         adapter = new CatalogueAdapter();
+        
+        // Single click to view variants
         adapter.setOnItemClickListener(item -> {
             Bundle bundle = new Bundle();
             bundle.putInt("itemId", item.getId());
             Navigation.findNavController(view).navigate(R.id.action_navigation_catalogue_to_itemVariantsFragment, bundle);
         });
+
+        // Long click to edit/delete the main item itself
+        adapter.setOnItemLongClickListener(this::showItemManagementDialog);
+        
         recyclerView.setAdapter(adapter);
 
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
@@ -96,6 +104,41 @@ public class CatalogueFragment extends Fragment {
                 return false;
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
+    }
+
+    private void showItemManagementDialog(Item item) {
+        String[] options = {"Edit Component", "Delete Component", "Manage Brands/Variants"};
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(item.getName())
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        // Edit item
+                        Bundle bundle = new Bundle();
+                        bundle.putInt("itemId", item.getId());
+                        Navigation.findNavController(requireView()).navigate(R.id.action_navigation_catalogue_to_addItemFragment, bundle);
+                    } else if (which == 1) {
+                        // Delete item
+                        confirmDeleteItem(item);
+                    } else if (which == 2) {
+                        // View variants
+                        Bundle bundle = new Bundle();
+                        bundle.putInt("itemId", item.getId());
+                        Navigation.findNavController(requireView()).navigate(R.id.action_navigation_catalogue_to_itemVariantsFragment, bundle);
+                    }
+                })
+                .show();
+    }
+
+    private void confirmDeleteItem(Item item) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Delete Component")
+                .setMessage("Are you sure you want to delete '" + item.getName() + "' and all its variants? This cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    itemViewModel.delete(item);
+                    Toast.makeText(requireContext(), "Item deleted", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void filterItems(String query) {

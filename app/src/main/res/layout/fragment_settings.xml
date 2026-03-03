@@ -180,6 +180,15 @@
                         app:icon="@android:drawable/ic_menu_set_as" />
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonTemplates"
+                        style="@style/Widget.Material3.Button.TextButton.Icon"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start|center_vertical"
+                        android:text="Rules Templates"
+                        app:icon="@android:drawable/ic_menu_agenda" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonExport"
                         style="@style/Widget.Material3.Button.TextButton.Icon"
                         android:layout_width="match_parent"
@@ -210,7 +219,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="start|center_vertical"
-                        android:text="Full Backup (JSON)"
+                        android:text="Full Backup (ZIP)"
                         app:icon="@android:drawable/ic_menu_upload" />
 
                     <com.google.android.material.button.MaterialButton

@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
@@ -47,7 +48,7 @@ public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
     private TextInputEditText editTextBusinessName, editTextUserName, editTextUserNumber;
-    private MaterialButton buttonEditProfile, buttonSaveProfile, buttonAddPaymentMethod;
+    private MaterialButton buttonEditProfile, buttonSaveProfile, buttonAddPaymentMethod, buttonTemplates;
     private RecyclerView recyclerViewPaymentMethods;
     private PaymentMethodAdapter paymentAdapter;
     private List<PaymentMethod> paymentMethods = new ArrayList<>();
@@ -85,6 +86,7 @@ public class SettingsFragment extends Fragment {
         buttonAddPaymentMethod = view.findViewById(R.id.buttonAddPaymentMethod);
         buttonEditProfile = view.findViewById(R.id.buttonEditProfile);
         buttonSaveProfile = view.findViewById(R.id.buttonSaveProfile);
+        buttonTemplates = view.findViewById(R.id.buttonTemplates);
 
         setupPaymentRecyclerView();
         loadProfileData();
@@ -97,6 +99,10 @@ public class SettingsFragment extends Fragment {
         });
 
         buttonAddPaymentMethod.setOnClickListener(v -> showAddPaymentMethodDialog());
+
+        buttonTemplates.setOnClickListener(v -> {
+            Navigation.findNavController(view).navigate(R.id.action_navigation_settings_to_rulesTemplatesFragment);
+        });
 
         view.findViewById(R.id.buttonAppearance).setOnClickListener(v -> showThemeDialog());
         view.findViewById(R.id.buttonCurrency).setOnClickListener(v -> showCurrencyDialog());
@@ -141,7 +147,7 @@ public class SettingsFragment extends Fragment {
         
         buttonEditProfile.setVisibility(editing ? View.GONE : View.VISIBLE);
         buttonSaveProfile.setVisibility(editing ? View.VISIBLE : View.GONE);
-        buttonAddPaymentMethod.setVisibility(editing ? View.VISIBLE : View.GONE);
+        buttonAddPaymentMethod.setVisibility(editing ? View.GONE : View.VISIBLE);
         paymentAdapter.setEditing(editing);
     }
 

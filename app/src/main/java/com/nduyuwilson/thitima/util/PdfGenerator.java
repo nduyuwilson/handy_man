@@ -91,8 +91,13 @@ public class PdfGenerator {
         titlePaint.setTextSize(22);
         titlePaint.setColor(Color.WHITE);
         titlePaint.setTextAlign(Paint.Align.CENTER);
-        String headerType = isLabourOnly ? " - LABOUR INVOICE" : " - QUOTATION";
-        canvas.drawText(businessName.toUpperCase() + headerType, 297, 55, titlePaint);
+        // Header now only shows Company Name
+        canvas.drawText(businessName.toUpperCase(), 297, 45, titlePaint);
+        
+        // Sub-Header Title (e.g. LABOUR INVOICE or QUOTATION) moved below Company Name
+        titlePaint.setTextSize(14);
+        String subHeaderType = isLabourOnly ? "LABOUR INVOICE" : "QUOTATION";
+        canvas.drawText(subHeaderType, 297, 65, titlePaint);
         
         int x = 40;
         int y = 110;
@@ -230,7 +235,7 @@ public class PdfGenerator {
         canvas.drawText("GRAND TOTAL:", x + 300, y, paint);
         canvas.drawText(currency + " " + Formatter.formatNumber(materialTotal + labourTotal), x + 440, y, paint);
 
-        // Payments and Rules... (rest of the logic remains similar)
+        // Payments and Rules
         y += 50;
         paint.setColor(Color.BLACK);
         paint.setTextSize(12);

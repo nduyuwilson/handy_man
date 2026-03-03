@@ -14,16 +14,24 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Project;
+import com.nduyuwilson.thitima.data.entity.RulesTemplate;
 import com.nduyuwilson.thitima.viewmodel.ProjectViewModel;
+import com.nduyuwilson.thitima.viewmodel.RulesTemplateViewModel;
+
+import java.util.List;
 
 public class AddProjectFragment extends Fragment {
 
     private TextInputEditText editTextName, editTextLocation, editTextDescription, editTextClientName, editTextClientContact, editTextLabourCost, editTextLabourPercent, editTextRules;
+    private TextInputLayout textInputLayoutRules;
     private ProjectViewModel projectViewModel;
+    private RulesTemplateViewModel rulesTemplateViewModel;
     private int projectId = -1;
     private Project existingProject;
 
@@ -46,6 +54,7 @@ public class AddProjectFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         projectViewModel = new ViewModelProvider(this).get(ProjectViewModel.class);
+        rulesTemplateViewModel = new ViewModelProvider(this).get(RulesTemplateViewModel.class);
 
         editTextName = view.findViewById(R.id.editTextProjectName);
         editTextLocation = view.findViewById(R.id.editTextLocation);
@@ -55,6 +64,10 @@ public class AddProjectFragment extends Fragment {
         editTextLabourCost = view.findViewById(R.id.editTextLabourCost);
         editTextLabourPercent = view.findViewById(R.id.editTextLabourPercent);
         editTextRules = view.findViewById(R.id.editTextRules);
+        textInputLayoutRules = view.findViewById(R.id.textInputLayoutRules);
+
+        // Set up template selection icon click
+        textInputLayoutRules.setEndIconOnClickListener(v -> showTemplateSelectionDialog());
 
         Button buttonSave = view.findViewById(R.id.buttonSaveProject);
         TextView textViewHeader = view.findViewById(R.id.textViewHeader);
@@ -71,6 +84,31 @@ public class AddProjectFragment extends Fragment {
         }
 
         buttonSave.setOnClickListener(v -> saveProject(v));
+    }
+
+    private void showTemplateSelectionDialog() {
+        rulesTemplateViewModel.getAllTemplates().observe(getViewLifecycleOwner(), templates -> {
+            if (templates == null || templates.isEmpty()) {
+                Snackbar.make(requireView(), "No templates found. Add them in Settings.", Snackbar.LENGTH_LONG)
+                        .setAction("Settings", v -> Navigation.findNavController(requireView()).navigate(R.id.navigation_settings))
+                        .show();
+                return;
+            }
+
+            String[] titles = new String[templates.size()];
+            for (int i = 0; i < templates.size(); i++) {
+                titles[i] = templates.get(i).getTitle();
+            }
+
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Select Rules Template")
+                    .setItems(titles, (dialog, which) -> {
+                        RulesTemplate selected = templates.get(which);
+                        editTextRules.setText(selected.getContent());
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
     }
 
     private void populateFields(Project project) {

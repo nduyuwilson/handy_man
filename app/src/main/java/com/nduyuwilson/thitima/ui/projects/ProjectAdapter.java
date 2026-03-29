@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.chip.Chip;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Project;
 
@@ -36,7 +37,8 @@ public class ProjectAdapter extends ListAdapter<Project, ProjectAdapter.ProjectV
         public boolean areContentsTheSame(@NonNull Project oldItem, @NonNull Project newItem) {
             return oldItem.getName().equals(newItem.getName()) &&
                     oldItem.getLocation().equals(newItem.getLocation()) &&
-                    oldItem.getClientName().equals(newItem.getClientName());
+                    oldItem.getClientName().equals(newItem.getClientName()) &&
+                    oldItem.getStatus().equals(newItem.getStatus());
         }
     };
 
@@ -53,17 +55,30 @@ public class ProjectAdapter extends ListAdapter<Project, ProjectAdapter.ProjectV
         holder.textViewProjectName.setText(project.getName());
         holder.textViewProjectLocation.setText(project.getLocation());
         holder.textViewClientName.setText("Client: " + project.getClientName());
+        
+        holder.chipStatus.setText(project.getStatus());
+        // Simple color coding based on status
+        if ("PAID".equals(project.getStatus())) {
+            holder.chipStatus.setChipBackgroundColorResource(android.R.color.holo_green_light);
+        } else if ("ONGOING".equals(project.getStatus())) {
+            holder.chipStatus.setChipBackgroundColorResource(android.R.color.holo_orange_light);
+        } else {
+            holder.chipStatus.setChipBackgroundColorResource(android.R.color.darker_gray);
+        }
+
         holder.itemView.setOnClickListener(v -> listener.onProjectClick(project));
     }
 
     static class ProjectViewHolder extends RecyclerView.ViewHolder {
         TextView textViewProjectName, textViewProjectLocation, textViewClientName;
+        Chip chipStatus;
 
         public ProjectViewHolder(@NonNull View itemView) {
             super(itemView);
             textViewProjectName = itemView.findViewById(R.id.textViewProjectName);
             textViewProjectLocation = itemView.findViewById(R.id.textViewProjectLocation);
             textViewClientName = itemView.findViewById(R.id.textViewClientName);
+            chipStatus = itemView.findViewById(R.id.chipStatus);
         }
     }
 }

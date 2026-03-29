@@ -1,6 +1,7 @@
 package com.nduyuwilson.thitima.data.repository;
 
 import android.app.Application;
+import android.net.Uri;
 
 import androidx.lifecycle.LiveData;
 
@@ -10,6 +11,7 @@ import com.nduyuwilson.thitima.data.dao.ItemVariantDao;
 import com.nduyuwilson.thitima.data.entity.Item;
 import com.nduyuwilson.thitima.data.entity.ItemVariant;
 
+import java.io.File;
 import java.util.List;
 
 public class ItemRepository {
@@ -42,6 +44,7 @@ public class ItemRepository {
 
     public void delete(Item item) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            deleteInternalFile(item.getImageUri());
             mItemDao.delete(item);
         });
     }
@@ -73,7 +76,23 @@ public class ItemRepository {
 
     public void deleteVariant(ItemVariant variant) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            deleteInternalFile(variant.getImageUri());
             mItemVariantDao.delete(variant);
         });
+    }
+
+    private void deleteInternalFile(String uriString) {
+        if (uriString == null || uriString.isEmpty()) return;
+        try {
+            Uri uri = Uri.parse(uriString);
+            if ("file".equals(uri.getScheme())) {
+                File file = new File(uri.getPath());
+                if (file.exists()) {
+                    file.delete();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

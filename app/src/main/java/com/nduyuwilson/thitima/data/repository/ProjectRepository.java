@@ -4,9 +4,11 @@ import android.app.Application;
 import androidx.lifecycle.LiveData;
 import com.nduyuwilson.thitima.data.AppDatabase;
 import com.nduyuwilson.thitima.data.dao.LabourActivityDao;
+import com.nduyuwilson.thitima.data.dao.PaymentDao;
 import com.nduyuwilson.thitima.data.dao.ProjectDao;
 import com.nduyuwilson.thitima.data.dao.ProjectItemDao;
 import com.nduyuwilson.thitima.data.entity.LabourActivity;
+import com.nduyuwilson.thitima.data.entity.Payment;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import java.util.List;
@@ -17,6 +19,7 @@ public class ProjectRepository {
     private ProjectDao mProjectDao;
     private ProjectItemDao mProjectItemDao;
     private LabourActivityDao mLabourActivityDao;
+    private PaymentDao mPaymentDao;
     private LiveData<List<Project>> mAllProjects;
 
     public ProjectRepository(Application application) {
@@ -24,6 +27,7 @@ public class ProjectRepository {
         mProjectDao = db.projectDao();
         mProjectItemDao = db.projectItemDao();
         mLabourActivityDao = db.labourActivityDao();
+        mPaymentDao = db.paymentDao();
         mAllProjects = mProjectDao.getAllProjects();
     }
 
@@ -107,6 +111,29 @@ public class ProjectRepository {
     public void deleteLabourActivity(LabourActivity activity) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             mLabourActivityDao.delete(activity);
+        });
+    }
+
+    // Payments
+    public LiveData<List<Payment>> getPaymentsForProject(int projectId) {
+        return mPaymentDao.getPaymentsForProject(projectId);
+    }
+
+    public void insertPayment(Payment payment) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mPaymentDao.insert(payment);
+        });
+    }
+
+    public void updatePayment(Payment payment) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mPaymentDao.update(payment);
+        });
+    }
+
+    public void deletePayment(Payment payment) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            mPaymentDao.delete(payment);
         });
     }
 }

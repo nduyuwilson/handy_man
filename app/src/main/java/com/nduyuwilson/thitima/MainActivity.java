@@ -22,7 +22,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        checkTrialPeriod();
+        // Remove check trial period for now
+        //checkTrialPeriod();
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
         

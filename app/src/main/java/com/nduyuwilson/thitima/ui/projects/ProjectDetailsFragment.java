@@ -34,6 +34,7 @@ import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Item;
 import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.entity.LabourActivity;
+import com.nduyuwilson.thitima.data.entity.Payment;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import com.nduyuwilson.thitima.util.Formatter;
@@ -51,15 +52,23 @@ public class ProjectDetailsFragment extends Fragment {
     private ProjectViewModel projectViewModel;
     private ItemViewModel itemViewModel;
     private int projectId;
-    private TextView textViewTitle, textViewLocation, textViewClient, textViewMaterialTotal, textViewMaterialTotalTop, textViewLabourTotalRow, textViewLabourTop, textViewGrandTotal, textViewRules;
+
+    // View bindings
+    private TextView tvTitle, tvLocation, tvClient, tvGrandTotalTop, tvMaterialTotalTop, tvLabourTotalTop, tvTotalPaidTop, tvBalanceDueTop;
+    private TextView tvMaterialTotalTable, tvLabourTotalTable, tvRules;
+    
     private ProjectItemAdapter itemAdapter;
     private LabourActivityAdapter labourAdapter;
+    private PaymentAdapter paymentAdapter;
+    
     private double currentLabourTotal = 0;
     private double currentMaterialTotal = 0;
+    private double currentPaidTotal = 0;
     
     private Project currentProject;
     private List<ProjectItem> currentProjectItems;
     private List<LabourActivity> currentLabourActivities;
+    private List<Payment> currentPayments;
     private Map<Integer, Item> itemMap = new HashMap<>();
     private Map<Integer, ItemVariant> variantMap = new HashMap<>();
 
@@ -81,6 +90,7 @@ public class ProjectDetailsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Setup Toolbar
         Toolbar toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
         if (((AppCompatActivity) requireActivity()).getSupportActionBar() != null) {
@@ -88,46 +98,90 @@ public class ProjectDetailsFragment extends Fragment {
         }
         toolbar.setNavigationOnClickListener(v -> Navigation.findNavController(v).navigateUp());
 
-        textViewTitle = view.findViewById(R.id.tvProjectTitle);
-        textViewLocation = view.findViewById(R.id.tvProjectLocation);
-        textViewClient = view.findViewById(R.id.tvClientDetails);
-        
-        // Financial views
-        textViewMaterialTotalTop = view.findViewById(R.id.tvMaterialTotalTop);
-        textViewLabourTop = view.findViewById(R.id.tvLabourTotalTop);
-        textViewGrandTotal = view.findViewById(R.id.tvGrandTotalTop);
-        
-        // Table views
-        textViewMaterialTotal = view.findViewById(R.id.tvMaterialTotalTable);
-        textViewLabourTotalRow = view.findViewById(R.id.tvLabourTotalTable);
-        
-        textViewRules = view.findViewById(R.id.tvRules);
+        // Bind Views
+        tvTitle = view.findViewById(R.id.tvProjectTitle);
+        tvLocation = view.findViewById(R.id.tvProjectLocation);
+        tvClient = view.findViewById(R.id.tvClientDetails);
+        tvGrandTotalTop = view.findViewById(R.id.tvGrandTotalTop);
+        tvMaterialTotalTop = view.findViewById(R.id.tvMaterialTotalTop);
+        tvLabourTotalTop = view.findViewById(R.id.tvLabourTotalTop); // Fixed ID
+        tvTotalPaidTop = view.findViewById(R.id.tvTotalPaidTop);
+        tvBalanceDueTop = view.findViewById(R.id.tvBalanceDueTop);
+        tvMaterialTotalTable = view.findViewById(R.id.tvMaterialTotalTable);
+        tvLabourTotalTable = view.findViewById(R.id.tvLabourTotalTable);
+        tvRules = view.findViewById(R.id.tvRules);
 
-        RecyclerView recyclerViewItems = view.findViewById(R.id.recyclerViewProjectItems);
+        // ViewModels
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
-        
-        itemAdapter = new ProjectItemAdapter(itemViewModel, getViewLifecycleOwner(), this::showProjectItemOptions);
-        recyclerViewItems.setAdapter(itemAdapter);
-
-        RecyclerView recyclerViewLabour = view.findViewById(R.id.recyclerViewLabourActivities);
-        labourAdapter = new LabourActivityAdapter(this::showLabourActivityOptions);
-        recyclerViewLabour.setAdapter(labourAdapter);
-
         projectViewModel = new ViewModelProvider(this).get(ProjectViewModel.class);
-        
+
+        // Recycler Views
+        setupRecyclerViews(view);
+
+        // Observers
+        observeData();
+
+        // Buttons
+        view.findViewById(R.id.buttonAddComponent).setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putInt("projectId", projectId);
+            Navigation.findNavController(view).navigate(R.id.action_projectDetailsFragment_to_addComponentToProjectFragment, bundle);
+        });
+
+        view.findViewById(R.id.buttonAddLabour).setOnClickListener(v -> showAddLabourDialog(null));
+        view.findViewById(R.id.buttonAddPayment).setOnClickListener(v -> showAddPaymentDialog(null));
+        view.findViewById(R.id.buttonGenerateInvoice).setOnClickListener(v -> generateAndSharePdf(false));
+        view.findViewById(R.id.buttonGenerateLabourInvoice).setOnClickListener(v -> generateAndSharePdf(true));
+
+        // Options Menu
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.project_details_menu, menu);
+            }
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                if (menuItem.getItemId() == R.id.action_edit_project) {
+                    Bundle bundle = new Bundle();
+                    bundle.putInt("projectId", projectId);
+                    Navigation.findNavController(view).navigate(R.id.action_projectDetailsFragment_to_addProjectFragment, bundle);
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
+    }
+
+    private void setupRecyclerViews(View view) {
+        RecyclerView rvItems = view.findViewById(R.id.recyclerViewProjectItems);
+        itemAdapter = new ProjectItemAdapter(itemViewModel, getViewLifecycleOwner(), this::showProjectItemOptions);
+        rvItems.setAdapter(itemAdapter);
+
+        RecyclerView rvLabour = view.findViewById(R.id.recyclerViewLabourActivities);
+        labourAdapter = new LabourActivityAdapter(this::showLabourActivityOptions);
+        rvLabour.setAdapter(labourAdapter);
+
+        RecyclerView rvPayments = view.findViewById(R.id.recyclerViewPayments);
+        paymentAdapter = new PaymentAdapter(this::showPaymentOptions);
+        rvPayments.setAdapter(paymentAdapter);
+    }
+
+    private void observeData() {
         projectViewModel.getProjectById(projectId).observe(getViewLifecycleOwner(), project -> {
             if (project != null) {
                 currentProject = project;
-                displayProjectBasicInfo(project);
-                calculateAllTotals();
+                tvTitle.setText(project.getName());
+                tvLocation.setText(project.getLocation());
+                tvClient.setText(String.format("%s\n%s", project.getClientName(), project.getClientContact()));
+                tvRules.setText(project.getRulesOfEngagement() != null && !project.getRulesOfEngagement().isEmpty() ? project.getRulesOfEngagement() : "N/A");
+                calculateTotals();
             }
         });
 
         projectViewModel.getItemsForProject(projectId).observe(getViewLifecycleOwner(), projectItems -> {
             currentProjectItems = projectItems;
             itemAdapter.submitList(projectItems);
-            calculateAllTotals();
-            
+            calculateTotals();
             if (projectItems != null) {
                 for (ProjectItem pi : projectItems) {
                     itemViewModel.getItemById(pi.getItemId()).observe(getViewLifecycleOwner(), item -> {
@@ -145,48 +199,17 @@ public class ProjectDetailsFragment extends Fragment {
         projectViewModel.getActivitiesForProject(projectId).observe(getViewLifecycleOwner(), activities -> {
             currentLabourActivities = activities;
             labourAdapter.submitList(activities);
-            calculateAllTotals();
+            calculateTotals();
         });
 
-        view.findViewById(R.id.buttonGenerateInvoice).setOnClickListener(v -> generateAndSharePdf(false));
-        view.findViewById(R.id.buttonGenerateLabourInvoice).setOnClickListener(v -> generateAndSharePdf(true));
-        
-        view.findViewById(R.id.buttonAddComponent).setOnClickListener(v -> {
-            Bundle bundle = new Bundle();
-            bundle.putInt("projectId", projectId);
-            Navigation.findNavController(view).navigate(R.id.action_projectDetailsFragment_to_addComponentToProjectFragment, bundle);
+        projectViewModel.getPaymentsForProject(projectId).observe(getViewLifecycleOwner(), payments -> {
+            currentPayments = payments;
+            paymentAdapter.submitList(payments);
+            calculateTotals();
         });
-
-        view.findViewById(R.id.buttonAddLabour).setOnClickListener(v -> showAddLabourDialog(null));
-
-        requireActivity().addMenuProvider(new MenuProvider() {
-            @Override
-            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
-                menuInflater.inflate(R.menu.project_details_menu, menu);
-            }
-
-            @Override
-            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
-                if (menuItem.getItemId() == R.id.action_edit_project) {
-                    Bundle bundle = new Bundle();
-                    bundle.putInt("projectId", projectId);
-                    Navigation.findNavController(view).navigate(R.id.action_projectDetailsFragment_to_addProjectFragment, bundle);
-                    return true;
-                }
-                return false;
-            }
-        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
-    private void displayProjectBasicInfo(Project project) {
-        textViewTitle.setText(project.getName());
-        textViewLocation.setText(project.getLocation());
-        textViewClient.setText(String.format("%s\n%s", project.getClientName(), project.getClientContact()));
-        textViewRules.setText(project.getRulesOfEngagement() != null && !project.getRulesOfEngagement().isEmpty() ? 
-                project.getRulesOfEngagement() : "N/A");
-    }
-
-    private void calculateAllTotals() {
+    private void calculateTotals() {
         currentMaterialTotal = 0;
         if (currentProjectItems != null) {
             for (ProjectItem item : currentProjectItems) {
@@ -211,153 +234,159 @@ public class ProjectDetailsFragment extends Fragment {
         }
 
         currentLabourTotal = baseLabour + specificLabourTotal;
+        double grandTotal = currentMaterialTotal + currentLabourTotal;
 
-        String matTotalStr = Formatter.formatPrice(requireContext(), currentMaterialTotal);
-        if (textViewMaterialTotal != null) textViewMaterialTotal.setText(matTotalStr);
-        if (textViewMaterialTotalTop != null) textViewMaterialTotalTop.setText(matTotalStr);
-        
-        String formattedLabour = Formatter.formatPrice(requireContext(), currentLabourTotal);
-        if (textViewLabourTop != null) textViewLabourTop.setText(formattedLabour);
-        if (textViewLabourTotalRow != null) textViewLabourTotalRow.setText(formattedLabour);
-        
-        textViewGrandTotal.setText(Formatter.formatPrice(requireContext(), currentMaterialTotal + currentLabourTotal));
+        currentPaidTotal = 0;
+        if (currentPayments != null) {
+            for (Payment p : currentPayments) currentPaidTotal += p.getAmount();
+        }
+
+        String matStr = Formatter.formatPrice(requireContext(), currentMaterialTotal);
+        String labStr = Formatter.formatPrice(requireContext(), currentLabourTotal);
+        String grandStr = Formatter.formatPrice(requireContext(), grandTotal);
+        String paidStr = Formatter.formatPrice(requireContext(), currentPaidTotal);
+        String balStr = Formatter.formatPrice(requireContext(), grandTotal - currentPaidTotal);
+
+        if (tvMaterialTotalTop != null) tvMaterialTotalTop.setText(matStr);
+        if (tvMaterialTotalTable != null) tvMaterialTotalTable.setText(matStr);
+        if (tvLabourTotalTop != null) tvLabourTotalTop.setText(labStr);
+        if (tvLabourTotalTable != null) tvLabourTotalTable.setText(labStr);
+        if (tvGrandTotalTop != null) tvGrandTotalTop.setText(grandStr);
+        if (tvTotalPaidTop != null) tvTotalPaidTop.setText(paidStr);
+        if (tvBalanceDueTop != null) tvBalanceDueTop.setText(balStr);
     }
 
-    private void showAddLabourDialog(@Nullable LabourActivity existingActivity) {
+    private void showAddPaymentDialog(@Nullable Payment existing) {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
-        builder.setTitle(existingActivity == null ? "Add Labour Activity" : "Edit Labour Activity");
-
+        builder.setTitle(existing == null ? "Log Payment" : "Edit Payment");
         LinearLayout layout = new LinearLayout(requireContext());
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(48, 24, 48, 24);
 
-        final EditText editName = new EditText(requireContext());
-        editName.setHint("Activity Name (e.g. Consultation)");
-        if (existingActivity != null) editName.setText(existingActivity.getName());
-        layout.addView(editName);
+        final EditText editAmount = new EditText(requireContext());
+        editAmount.setHint("Amount");
+        editAmount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        if (existing != null) editAmount.setText(String.valueOf(existing.getAmount()));
+        layout.addView(editAmount);
 
-        final EditText editCost = new EditText(requireContext());
-        editCost.setHint("Cost");
-        editCost.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        if (existingActivity != null) editCost.setText(String.valueOf(existingActivity.getCost()));
-        layout.addView(editCost);
+        final EditText editMethod = new EditText(requireContext());
+        editMethod.setHint("Method (Cash, M-Pesa, etc.)");
+        if (existing != null) editMethod.setText(existing.getMethod());
+        layout.addView(editMethod);
+
+        final EditText editRef = new EditText(requireContext());
+        editRef.setHint("Reference/Transaction ID");
+        if (existing != null) editRef.setText(existing.getReference());
+        layout.addView(editRef);
 
         builder.setView(layout);
-
-        builder.setPositiveButton(existingActivity == null ? "Add" : "Update", (dialog, which) -> {
-            String name = editName.getText().toString().trim();
-            String costStr = editCost.getText().toString().trim();
-
-            if (!TextUtils.isEmpty(name) && !TextUtils.isEmpty(costStr)) {
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String amtStr = editAmount.getText().toString();
+            String method = editMethod.getText().toString();
+            String ref = editRef.getText().toString();
+            if (!amtStr.isEmpty()) {
                 try {
-                    double cost = Double.parseDouble(costStr);
-                    if (existingActivity == null) {
-                        projectViewModel.insertLabourActivity(new LabourActivity(projectId, name, cost));
-                    } else {
-                        existingActivity.setName(name);
-                        existingActivity.setCost(cost);
-                        projectViewModel.updateLabourActivity(existingActivity);
+                    double amt = Double.parseDouble(amtStr);
+                    if (existing == null) projectViewModel.insertPayment(new Payment(projectId, amt, method, ref));
+                    else {
+                        existing.setAmount(amt);
+                        existing.setMethod(method);
+                        existing.setReference(ref);
+                        projectViewModel.updatePayment(existing);
                     }
                 } catch (NumberFormatException ignored) {}
             }
         });
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+        builder.setNegativeButton("Cancel", null).show();
+    }
+
+    private void showPaymentOptions(Payment p) {
+        String[] options = {"Generate Receipt", "Edit Payment", "Remove Payment"};
+        new MaterialAlertDialogBuilder(requireContext()).setTitle("Payment Option").setItems(options, (d, which) -> {
+            if (which == 0) generateReceiptPdf(p);
+            else if (which == 1) showAddPaymentDialog(p);
+            else projectViewModel.deletePayment(p);
+        }).show();
+    }
+
+    private void generateReceiptPdf(Payment p) {
+        File file = PdfGenerator.generateReceipt(requireContext(), currentProject, p);
+        if (file != null) {
+            Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("application/pdf");
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            startActivity(Intent.createChooser(intent, "Share Receipt"));
+        }
     }
 
     private void showLabourActivityOptions(LabourActivity activity) {
         String[] options = {"Edit Activity", "Remove Activity"};
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(activity.getName())
-                .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        showAddLabourDialog(activity);
-                    } else {
-                        new MaterialAlertDialogBuilder(requireContext())
-                                .setTitle("Remove Activity")
-                                .setMessage("Delete this labour activity?")
-                                .setPositiveButton("Delete", (d, w) -> projectViewModel.deleteLabourActivity(activity))
-                                .setNegativeButton("Cancel", null)
-                                .show();
-                    }
-                })
-                .show();
+        new MaterialAlertDialogBuilder(requireContext()).setTitle(activity.getName()).setItems(options, (dialog, which) -> {
+            if (which == 0) showAddLabourDialog(activity);
+            else projectViewModel.deleteLabourActivity(activity);
+        }).show();
     }
 
-    private void showProjectItemOptions(ProjectItem projectItem) {
+    private void showAddLabourDialog(@Nullable LabourActivity existing) {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        builder.setTitle(existing == null ? "Add Labour" : "Edit Labour");
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 24);
+        final EditText editName = new EditText(requireContext());
+        editName.setHint("Activity Name");
+        if (existing != null) editName.setText(existing.getName());
+        layout.addView(editName);
+        final EditText editCost = new EditText(requireContext());
+        editCost.setHint("Cost");
+        editCost.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        if (existing != null) editCost.setText(String.valueOf(existing.getCost()));
+        layout.addView(editCost);
+        builder.setView(layout).setPositiveButton("Save", (d, w) -> {
+            String name = editName.getText().toString();
+            String costS = editCost.getText().toString();
+            if (!name.isEmpty() && !costS.isEmpty()) {
+                try {
+                    double cost = Double.parseDouble(costS);
+                    if (existing == null) projectViewModel.insertLabourActivity(new LabourActivity(projectId, name, cost));
+                    else { existing.setName(name); existing.setCost(cost); projectViewModel.updateLabourActivity(existing); }
+                } catch (NumberFormatException ignored) {}
+            }
+        }).setNegativeButton("Cancel", null).show();
+    }
+
+    private void showProjectItemOptions(ProjectItem pi) {
         String[] options = {"Edit Quantity", "Remove Item"};
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Manage Item")
-                .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        showEditQuantityDialog(projectItem);
-                    } else {
-                        confirmRemoveItem(projectItem);
-                    }
-                })
-                .show();
+        new MaterialAlertDialogBuilder(requireContext()).setTitle("Manage Item").setItems(options, (d, w) -> {
+            if (w == 0) showEditQuantityDialog(pi);
+            else projectViewModel.deleteProjectItem(pi);
+        }).show();
     }
 
-    private void showEditQuantityDialog(ProjectItem projectItem) {
-        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_quantity, null);
-        TextInputEditText editTextQty = dialogView.findViewById(R.id.editTextDialogQuantity);
-        if (editTextQty != null) {
-            editTextQty.setText(String.valueOf(projectItem.getQuantity()));
-        }
-
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Edit Quantity")
-                .setView(dialogView)
-                .setPositiveButton("Update", (dialog, which) -> {
-                    if (editTextQty != null) {
-                        String qtyStr = editTextQty.getText().toString();
-                        if (!qtyStr.isEmpty()) {
-                            try {
-                                int qty = Integer.parseInt(qtyStr);
-                                if (qty > 0) {
-                                    projectItem.setQuantity(qty);
-                                    projectViewModel.updateProjectItem(projectItem);
-                                }
-                            } catch (NumberFormatException ignored) {}
-                        }
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void confirmRemoveItem(ProjectItem projectItem) {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Remove Item")
-                .setMessage("Are you sure you want to remove this item from the project?")
-                .setPositiveButton("Remove", (dialog, which) -> {
-                    projectViewModel.deleteProjectItem(projectItem);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+    private void showEditQuantityDialog(ProjectItem pi) {
+        View v = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_quantity, null);
+        TextInputEditText et = v.findViewById(R.id.editTextDialogQuantity);
+        if (et != null) et.setText(String.valueOf(pi.getQuantity()));
+        new MaterialAlertDialogBuilder(requireContext()).setTitle("Edit Quantity").setView(v).setPositiveButton("Update", (d, w) -> {
+            if (et != null) {
+                String s = et.getText().toString();
+                if (!s.isEmpty()) {
+                    try { pi.setQuantity(Integer.parseInt(s)); projectViewModel.updateProjectItem(pi); } catch (NumberFormatException ignored) {}
+                }
+            }
+        }).setNegativeButton("Cancel", null).show();
     }
 
     private void generateAndSharePdf(boolean labourOnly) {
-        if (currentProject == null) {
-            Toast.makeText(requireContext(), "Project data not loaded", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        File pdfFile = PdfGenerator.generateInvoice(requireContext(), currentProject, 
-                labourOnly ? null : currentProjectItems, 
-                currentLabourActivities, 
-                itemMap, variantMap);
-                
-        if (pdfFile != null) {
-            Uri contentUri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", pdfFile);
+        if (currentProject == null) return;
+        File file = PdfGenerator.generateInvoice(requireContext(), currentProject, labourOnly ? null : currentProjectItems, currentLabourActivities, itemMap, variantMap);
+        if (file != null) {
+            Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("application/pdf");
-            intent.putExtra(Intent.EXTRA_SUBJECT, (labourOnly ? "Labour Invoice - " : "Quotation - ") + currentProject.getName());
-            intent.putExtra(Intent.EXTRA_STREAM, contentUri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(intent, "Share PDF via"));
-        } else {
-            Toast.makeText(requireContext(), "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            startActivity(Intent.createChooser(intent, "Share PDF"));
         }
     }
 }

@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -16,6 +17,7 @@ import androidx.navigation.Navigation;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
@@ -29,11 +31,13 @@ import java.util.List;
 public class AddProjectFragment extends Fragment {
 
     private TextInputEditText editTextName, editTextLocation, editTextDescription, editTextClientName, editTextClientContact, editTextLabourCost, editTextLabourPercent, editTextRules;
+    private MaterialAutoCompleteTextView autoCompleteStatus;
     private TextInputLayout textInputLayoutRules;
     private ProjectViewModel projectViewModel;
     private RulesTemplateViewModel rulesTemplateViewModel;
     private int projectId = -1;
     private Project existingProject;
+    private final String[] statuses = {"QUOTATION", "ONGOING", "COMPLETED", "PAID"};
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,8 +69,12 @@ public class AddProjectFragment extends Fragment {
         editTextLabourPercent = view.findViewById(R.id.editTextLabourPercent);
         editTextRules = view.findViewById(R.id.editTextRules);
         textInputLayoutRules = view.findViewById(R.id.textInputLayoutRules);
+        autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
 
-        // Set up template selection icon click
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, statuses);
+        autoCompleteStatus.setAdapter(adapter);
+        autoCompleteStatus.setText(statuses[0], false);
+
         textInputLayoutRules.setEndIconOnClickListener(v -> showTemplateSelectionDialog());
 
         Button buttonSave = view.findViewById(R.id.buttonSaveProject);
@@ -120,6 +128,7 @@ public class AddProjectFragment extends Fragment {
         editTextLabourCost.setText(String.valueOf(project.getLabourCost()));
         editTextLabourPercent.setText(String.valueOf(project.getLabourPercentage()));
         editTextRules.setText(project.getRulesOfEngagement());
+        autoCompleteStatus.setText(project.getStatus(), false);
     }
 
     private void saveProject(View view) {
@@ -131,6 +140,7 @@ public class AddProjectFragment extends Fragment {
         String labourCostStr = editTextLabourCost.getText().toString().trim();
         String labourPercentStr = editTextLabourPercent.getText().toString().trim();
         String rules = editTextRules.getText().toString().trim();
+        String status = autoCompleteStatus.getText().toString();
 
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(location) || TextUtils.isEmpty(clientName)) {
             Snackbar.make(view, "Please fill in all required fields", Snackbar.LENGTH_SHORT).show();
@@ -139,16 +149,12 @@ public class AddProjectFragment extends Fragment {
 
         double labourCost = 0;
         if (!TextUtils.isEmpty(labourCostStr)) {
-            try {
-                labourCost = Double.parseDouble(labourCostStr);
-            } catch (NumberFormatException ignored) {}
+            try { labourCost = Double.parseDouble(labourCostStr); } catch (NumberFormatException ignored) {}
         }
 
         double labourPercent = 0;
         if (!TextUtils.isEmpty(labourPercentStr)) {
-            try {
-                labourPercent = Double.parseDouble(labourPercentStr);
-            } catch (NumberFormatException ignored) {}
+            try { labourPercent = Double.parseDouble(labourPercentStr); } catch (NumberFormatException ignored) {}
         }
 
         if (projectId != -1 && existingProject != null) {
@@ -160,6 +166,7 @@ public class AddProjectFragment extends Fragment {
             existingProject.setLabourCost(labourCost);
             existingProject.setLabourPercentage(labourPercent);
             existingProject.setRulesOfEngagement(rules);
+            existingProject.setStatus(status);
             projectViewModel.update(existingProject);
             Snackbar.make(view, "Project updated successfully", Snackbar.LENGTH_SHORT).show();
         } else {
@@ -167,6 +174,7 @@ public class AddProjectFragment extends Fragment {
             project.setLabourCost(labourCost);
             project.setLabourPercentage(labourPercent);
             project.setRulesOfEngagement(rules);
+            project.setStatus(status);
             projectViewModel.insert(project);
             Snackbar.make(view, "Project created successfully", Snackbar.LENGTH_SHORT).show();
         }

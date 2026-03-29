@@ -13,9 +13,10 @@ public class Project {
     private String clientName;
     private String clientContact;
     private double labourCost;
-    private double labourPercentage; // New field for % based labour
+    private double labourPercentage;
     private String rulesOfEngagement;
     private long createdAt;
+    private String status; // New field: QUOTATION, ONGOING, COMPLETED, PAID
 
     public Project(String name, String location, String description, String clientName, String clientContact) {
         this.name = name;
@@ -24,6 +25,7 @@ public class Project {
         this.clientName = clientName;
         this.clientContact = clientContact;
         this.createdAt = System.currentTimeMillis();
+        this.status = "QUOTATION"; // Default status
     }
 
     // Getters and Setters
@@ -47,4 +49,6 @@ public class Project {
     public void setRulesOfEngagement(String rulesOfEngagement) { this.rulesOfEngagement = rulesOfEngagement; }
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

@@ -21,6 +21,7 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.tabs.TabLayout;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.viewmodel.ProjectViewModel;
@@ -33,6 +34,8 @@ public class ProjectsFragment extends Fragment {
     private ProjectViewModel projectViewModel;
     private ProjectAdapter adapter;
     private List<Project> allProjects = new ArrayList<>();
+    private String currentFilterStatus = "ALL";
+    private String currentSearchQuery = "";
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -57,7 +60,22 @@ public class ProjectsFragment extends Fragment {
         projectViewModel = new ViewModelProvider(this).get(ProjectViewModel.class);
         projectViewModel.getAllProjects().observe(getViewLifecycleOwner(), projects -> {
             allProjects = projects;
-            adapter.submitList(projects);
+            applyFilters();
+        });
+
+        TabLayout tabLayout = view.findViewById(R.id.tabLayoutStatus);
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                currentFilterStatus = tab.getText().toString();
+                applyFilters();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {}
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {}
         });
 
         FloatingActionButton fab = view.findViewById(R.id.fabAddProject);
@@ -81,7 +99,8 @@ public class ProjectsFragment extends Fragment {
 
                     @Override
                     public boolean onQueryTextChange(String newText) {
-                        filterProjects(newText);
+                        currentSearchQuery = newText;
+                        applyFilters();
                         return true;
                     }
                 });
@@ -94,16 +113,15 @@ public class ProjectsFragment extends Fragment {
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
-    private void filterProjects(String query) {
-        if (query == null || query.isEmpty()) {
-            adapter.submitList(allProjects);
-            return;
-        }
-        
+    private void applyFilters() {
         List<Project> filteredList = new ArrayList<>();
         for (Project p : allProjects) {
-            if (p.getName().toLowerCase().contains(query.toLowerCase()) || 
-                p.getLocation().toLowerCase().contains(query.toLowerCase())) {
+            boolean matchesStatus = currentFilterStatus.equals("ALL") || p.getStatus().equals(currentFilterStatus);
+            boolean matchesSearch = currentSearchQuery.isEmpty() || 
+                                   p.getName().toLowerCase().contains(currentSearchQuery.toLowerCase()) || 
+                                   p.getLocation().toLowerCase().contains(currentSearchQuery.toLowerCase());
+            
+            if (matchesStatus && matchesSearch) {
                 filteredList.add(p);
             }
         }

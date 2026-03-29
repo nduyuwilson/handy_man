@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
 import com.nduyuwilson.thitima.data.entity.LabourActivity;
+import com.nduyuwilson.thitima.data.entity.Payment;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import com.nduyuwilson.thitima.data.repository.ProjectRepository;
@@ -79,5 +80,22 @@ public class ProjectViewModel extends AndroidViewModel {
 
     public void deleteLabourActivity(LabourActivity activity) {
         mRepository.deleteLabourActivity(activity);
+    }
+
+    // Payments
+    public LiveData<List<Payment>> getPaymentsForProject(int projectId) {
+        return mRepository.getPaymentsForProject(projectId);
+    }
+
+    public void insertPayment(Payment payment) {
+        mRepository.insertPayment(payment);
+    }
+
+    public void updatePayment(Payment payment) {
+        mRepository.updatePayment(payment);
+    }
+
+    public void deletePayment(Payment payment) {
+        mRepository.deletePayment(payment);
     }
 }

@@ -42,7 +42,7 @@ public class RulesTemplateAdapter extends ListAdapter<RulesTemplate, RulesTempla
     @NonNull
     @Override
     public TemplateViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_project, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_rule, parent, false);
         return new TemplateViewHolder(view);
     }
 
@@ -50,17 +50,17 @@ public class RulesTemplateAdapter extends ListAdapter<RulesTemplate, RulesTempla
     public void onBindViewHolder(@NonNull TemplateViewHolder holder, int position) {
         RulesTemplate template = getItem(position);
         holder.textViewTitle.setText(template.getTitle());
-        holder.textViewSubtitle.setText(template.getContent());
+        holder.textViewDetails.setText(template.getContent());
         holder.itemView.setOnClickListener(v -> listener.onTemplateClick(template));
     }
 
     static class TemplateViewHolder extends RecyclerView.ViewHolder {
-        TextView textViewTitle, textViewSubtitle;
+        TextView textViewTitle, textViewDetails;
 
         public TemplateViewHolder(@NonNull View itemView) {
             super(itemView);
-            textViewTitle = itemView.findViewById(R.id.textViewProjectName);
-            textViewSubtitle = itemView.findViewById(R.id.textViewProjectLocation);
+            textViewTitle = itemView.findViewById(R.id.textViewRuleTitle);
+            textViewDetails = itemView.findViewById(R.id.textViewRuleDetails);
         }
     }
 }

@@ -105,11 +105,14 @@ public class SettingsFragment extends Fragment {
             Navigation.findNavController(view).navigate(R.id.action_navigation_settings_to_rulesTemplatesFragment);
         });
 
+        buttonWorkers.setOnClickListener(v -> {
+            Navigation.findNavController(view).navigate(R.id.action_navigation_settings_to_workersFragment);
+        });
+
         view.findViewById(R.id.buttonAppearance).setOnClickListener(v -> showThemeDialog());
         view.findViewById(R.id.buttonCurrency).setOnClickListener(v -> showCurrencyDialog());
         view.findViewById(R.id.buttonExport).setOnClickListener(v -> exportCatalogueToCsv());
         view.findViewById(R.id.buttonBackup).setOnClickListener(v -> performFullBackup());
-        view.findViewById(R.id.buttonWorkers).setOnClickListener(v -> showWorkersDialog());
         view.findViewById(R.id.buttonRestore).setOnClickListener(v -> mGetBackupFile.launch("application/zip"));
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
@@ -358,10 +361,6 @@ public class SettingsFragment extends Fragment {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
-    }
-
-    public void showWorkersDialog(){
-        Toast.makeText(requireContext(), "Coming Soon", Toast.LENGTH_SHORT).show();
     }
 
     private void showThemeDialog() {

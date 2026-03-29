@@ -49,6 +49,8 @@ public class BackupRepository {
             data.itemVariants = db.itemVariantDao().getAllVariantsSync();
             data.projectItems = db.projectItemDao().getAllProjectItemsSync();
             data.labourActivities = db.labourActivityDao().getAllActivitiesSync();
+            data.payments = db.paymentDao().getAllPaymentsSync();
+            data.rulesTemplates = db.rulesTemplateDao().getAllTemplatesSync();
             
             SharedPreferences prefs = application.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
             SettingsData settings = new SettingsData();
@@ -136,6 +138,8 @@ public class BackupRepository {
                         db.projectItemDao().deleteAll();
                         db.itemVariantDao().deleteAll();
                         db.labourActivityDao().deleteAll();
+                        db.paymentDao().deleteAll();
+                        db.rulesTemplateDao().deleteAll();
                         db.projectDao().deleteAll();
                         db.itemDao().deleteAll();
 
@@ -153,6 +157,12 @@ public class BackupRepository {
                         }
                         if (data.labourActivities != null) {
                             for (var activity : data.labourActivities) db.labourActivityDao().insert(activity);
+                        }
+                        if (data.payments != null) {
+                            for (var payment : data.payments) db.paymentDao().insert(payment);
+                        }
+                        if (data.rulesTemplates != null) {
+                            for (var template : data.rulesTemplates) db.rulesTemplateDao().insert(template);
                         }
                         
                         // Restore Settings

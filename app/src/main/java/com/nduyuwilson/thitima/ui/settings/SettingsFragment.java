@@ -48,7 +48,7 @@ public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
     private TextInputEditText editTextBusinessName, editTextUserName, editTextUserNumber;
-    private MaterialButton buttonEditProfile, buttonSaveProfile, buttonAddPaymentMethod, buttonTemplates;
+    private MaterialButton buttonEditProfile, buttonSaveProfile, buttonAddPaymentMethod, buttonTemplates, buttonWorkers;
     private RecyclerView recyclerViewPaymentMethods;
     private PaymentMethodAdapter paymentAdapter;
     private List<PaymentMethod> paymentMethods = new ArrayList<>();
@@ -87,6 +87,7 @@ public class SettingsFragment extends Fragment {
         buttonEditProfile = view.findViewById(R.id.buttonEditProfile);
         buttonSaveProfile = view.findViewById(R.id.buttonSaveProfile);
         buttonTemplates = view.findViewById(R.id.buttonTemplates);
+        buttonWorkers = view.findViewById(R.id.buttonWorkers);
 
         setupPaymentRecyclerView();
         loadProfileData();
@@ -108,6 +109,7 @@ public class SettingsFragment extends Fragment {
         view.findViewById(R.id.buttonCurrency).setOnClickListener(v -> showCurrencyDialog());
         view.findViewById(R.id.buttonExport).setOnClickListener(v -> exportCatalogueToCsv());
         view.findViewById(R.id.buttonBackup).setOnClickListener(v -> performFullBackup());
+        view.findViewById(R.id.buttonWorkers).setOnClickListener(v -> showWorkersDialog());
         view.findViewById(R.id.buttonRestore).setOnClickListener(v -> mGetBackupFile.launch("application/zip"));
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
@@ -356,6 +358,10 @@ public class SettingsFragment extends Fragment {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    public void showWorkersDialog(){
+        Toast.makeText(requireContext(), "Coming Soon", Toast.LENGTH_SHORT).show();
     }
 
     private void showThemeDialog() {

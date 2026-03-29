@@ -86,6 +86,9 @@
         <action
             android:id="@+id/action_navigation_settings_to_rulesTemplatesFragment"
             app:destination="@id/rulesTemplatesFragment" />
+        <action
+            android:id="@+id/action_navigation_settings_to_workersFragment"
+            app:destination="@id/workersFragment" />
     </fragment>
 
     <fragment
@@ -93,4 +96,10 @@
         android:name="com.nduyuwilson.thitima.ui.settings.RulesTemplatesFragment"
         android:label="Rules Templates"
         tools:layout="@layout/fragment_rules_templates" />
+
+    <fragment
+        android:id="@+id/workersFragment"
+        android:name="com.nduyuwilson.thitima.ui.settings.WorkersFragment"
+        android:label="Workers"
+        tools:layout="@layout/fragment_workers" />
 </navigation>

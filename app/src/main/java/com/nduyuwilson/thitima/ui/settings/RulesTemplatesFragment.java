@@ -5,8 +5,6 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.RulesTemplate;
 import com.nduyuwilson.thitima.viewmodel.RulesTemplateViewModel;
@@ -58,7 +57,7 @@ public class RulesTemplatesFragment extends Fragment {
     }
 
     private void showEditDeleteDialog(RulesTemplate template) {
-        String[] options = {"Edit", "Delete"};
+        String[] options = {"Edit Template", "Delete Template"};
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(template.getTitle())
                 .setItems(options, (dialog, which) -> {
@@ -67,7 +66,7 @@ public class RulesTemplatesFragment extends Fragment {
                     } else {
                         new MaterialAlertDialogBuilder(requireContext())
                                 .setTitle("Delete Template")
-                                .setMessage("Are you sure?")
+                                .setMessage("Are you sure you want to remove this template?")
                                 .setPositiveButton("Delete", (d, w) -> viewModel.delete(template))
                                 .setNegativeButton("Cancel", null)
                                 .show();
@@ -77,43 +76,35 @@ public class RulesTemplatesFragment extends Fragment {
     }
 
     private void showAddEditDialog(@Nullable RulesTemplate existing) {
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
-        builder.setTitle(existing == null ? "New Template" : "Edit Template");
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_edit_template, null);
+        TextInputEditText etTitle = dialogView.findViewById(R.id.etTemplateTitle);
+        TextInputEditText etContent = dialogView.findViewById(R.id.etTemplateContent);
 
-        LinearLayout layout = new LinearLayout(requireContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(48, 24, 48, 24);
+        if (existing != null) {
+            etTitle.setText(existing.getTitle());
+            etContent.setText(existing.getContent());
+        }
 
-        final EditText editTitle = new EditText(requireContext());
-        editTitle.setHint("Template Title");
-        if (existing != null) editTitle.setText(existing.getTitle());
-        layout.addView(editTitle);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(existing == null ? "Create New Template" : "Edit Template")
+                .setView(dialogView)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String title = etTitle.getText().toString().trim();
+                    String content = etContent.getText().toString().trim();
 
-        final EditText editContent = new EditText(requireContext());
-        editContent.setHint("Rules content...");
-        editContent.setMinLines(3);
-        if (existing != null) editContent.setText(existing.getContent());
-        layout.addView(editContent);
-
-        builder.setView(layout);
-
-        builder.setPositiveButton(existing == null ? "Add" : "Update", (dialog, which) -> {
-            String title = editTitle.getText().toString().trim();
-            String content = editContent.getText().toString().trim();
-
-            if (!TextUtils.isEmpty(title) && !TextUtils.isEmpty(content)) {
-                if (existing == null) {
-                    viewModel.insert(new RulesTemplate(title, content));
-                } else {
-                    existing.setTitle(title);
-                    existing.setContent(content);
-                    viewModel.update(existing);
-                }
-            } else {
-                Toast.makeText(requireContext(), "Fields cannot be empty", Toast.LENGTH_SHORT).show();
-            }
-        });
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+                    if (!TextUtils.isEmpty(title) && !TextUtils.isEmpty(content)) {
+                        if (existing == null) {
+                            viewModel.insert(new RulesTemplate(title, content));
+                        } else {
+                            existing.setTitle(title);
+                            existing.setContent(content);
+                            viewModel.update(existing);
+                        }
+                    } else {
+                        Toast.makeText(requireContext(), "Both title and content are required", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }

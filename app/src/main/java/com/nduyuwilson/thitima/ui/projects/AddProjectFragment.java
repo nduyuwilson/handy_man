@@ -112,7 +112,8 @@ public class AddProjectFragment extends Fragment {
                     .setTitle("Select Rules Template")
                     .setItems(titles, (dialog, which) -> {
                         RulesTemplate selected = templates.get(which);
-                        editTextRules.setText(selected.getContent());
+                        String prevText = editTextRules.getText().toString();
+                        editTextRules.setText(prevText + selected.getContent());
                     })
                     .setNegativeButton("Cancel", null)
                     .show();

@@ -51,6 +51,8 @@ public class BackupRepository {
             data.labourActivities = db.labourActivityDao().getAllActivitiesSync();
             data.payments = db.paymentDao().getAllPaymentsSync();
             data.rulesTemplates = db.rulesTemplateDao().getAllTemplatesSync();
+            data.workers = db.workerDao().getAllWorkersSync();
+            data.workerPayments = db.workerPaymentDao().getAllWorkerPaymentsSync();
             
             SharedPreferences prefs = application.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
             SettingsData settings = new SettingsData();
@@ -135,6 +137,8 @@ public class BackupRepository {
                 if (json != null) {
                     BackupData data = new Gson().fromJson(json, BackupData.class);
                     db.runInTransaction(() -> {
+                        db.workerPaymentDao().deleteAll();
+                        db.workerDao().deleteAll();
                         db.projectItemDao().deleteAll();
                         db.itemVariantDao().deleteAll();
                         db.labourActivityDao().deleteAll();
@@ -163,6 +167,12 @@ public class BackupRepository {
                         }
                         if (data.rulesTemplates != null) {
                             for (var template : data.rulesTemplates) db.rulesTemplateDao().insert(template);
+                        }
+                        if (data.workers != null) {
+                            for (var worker : data.workers) db.workerDao().insert(worker);
+                        }
+                        if (data.workerPayments != null) {
+                            for (var wPayment : data.workerPayments) db.workerPaymentDao().insert(wPayment);
                         }
                         
                         // Restore Settings

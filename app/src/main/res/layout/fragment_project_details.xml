@@ -70,7 +70,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Financial Dashboard Summary -->
+            <!-- Summary Dashboard Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -88,7 +88,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Estimated Grand Total"
+                        android:text="Project Overview"
                         android:textAppearance="?attr/textAppearanceLabelLarge" />
                     
                     <TextView
@@ -123,6 +123,25 @@
                                 android:textAppearance="?attr/textAppearanceLabelSmall" />
                             <TextView
                                 android:id="@+id/tvMaterialTotalTop"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="$0.00"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Worker Wages"
+                                android:textAppearance="?attr/textAppearanceLabelSmall" />
+                            <TextView
+                                android:id="@+id/tvWorkerWagesTop"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="$0.00"
@@ -177,7 +196,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="$0.00"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="#2E7D32"
+                                android:textColor="?attr/colorError"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -197,13 +216,13 @@
                                 android:layout_height="wrap_content"
                                 android:text="$0.00"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorError"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Client Info Card -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -228,6 +247,7 @@
                     android:lineSpacingExtra="4dp" />
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Materials Section -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -239,7 +259,6 @@
                     android:layout_centerVertical="true"
                     android:text="Materials &amp; Items"
                     android:textAppearance="?attr/textAppearanceTitleMedium" />
-                
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonAddComponent"
                     style="@style/Widget.Material3.Button.TextButton"
@@ -259,6 +278,7 @@
                 tools:listitem="@layout/item_project_component"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Labour Section -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -268,16 +288,15 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:text="Labour &amp; Activities"
+                    android:text="Client Labour Billing"
                     android:textAppearance="?attr/textAppearanceTitleMedium" />
-                
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonAddLabour"
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:text="Add Labour"
+                    android:text="Add Activity"
                     app:icon="@android:drawable/ic_input_add" />
             </RelativeLayout>
 
@@ -290,6 +309,7 @@
                 tools:listitem="@layout/item_project_component"
                 android:layout_marginBottom="16dp"/>
 
+            <!-- Worker Wages Section -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -299,16 +319,46 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:text="Payments &amp; Receipts"
+                    android:text="Worker Wages (Expenses)"
                     android:textAppearance="?attr/textAppearanceTitleMedium" />
-                
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonAddWorkerWage"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="Pay Worker"
+                    app:icon="@android:drawable/ic_input_add" />
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewWorkerPayments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_project_component"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Client Payments Section -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="Payments Received"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonAddPayment"
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:text="Log Payment"
+                    android:text="Log Receipt"
                     app:icon="@android:drawable/ic_menu_add" />
             </RelativeLayout>
 
@@ -319,80 +369,15 @@
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_project_component"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="24dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Financial Summary"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:layout_marginBottom="8dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp">
-
-                <TableLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:stretchColumns="1">
-
-                    <TableRow android:layout_marginBottom="8dp">
-                        <TextView android:text="Material Total" android:textAppearance="?attr/textAppearanceBodyMedium" />
-                        <TextView
-                            android:id="@+id/tvMaterialTotalTable"
-                            android:gravity="end"
-                            android:text="$0.00"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textStyle="bold" />
-                    </TableRow>
-
-                    <TableRow>
-                        <TextView android:text="Labour Total" android:textAppearance="?attr/textAppearanceBodyMedium" />
-                        <TextView
-                            android:id="@+id/tvLabourTotalTable"
-                            android:gravity="end"
-                            android:text="$0.00"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textStyle="bold" />
-                    </TableRow>
-                </TableLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Rules of Engagement"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:layout_marginBottom="8dp"/>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp">
-
-                <TextView
-                    android:id="@+id/tvRules"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:text="N/A"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?android:attr/textColorSecondary" />
-            </com.google.android.material.card.MaterialCardView>
-
+            <!-- Action Buttons -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonGenerateInvoice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="12dp"
-                android:text="Generate Full Quotation PDF"
+                android:text="Send Full Quotation"
                 app:icon="@android:drawable/ic_menu_share"
                 app:cornerRadius="12dp"
                 android:layout_marginBottom="12dp"/>
@@ -403,7 +388,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="12dp"
-                android:text="Generate Labour Only PDF"
+                android:text="Send Labour Invoice"
                 app:icon="@android:drawable/ic_menu_share"
                 app:cornerRadius="12dp" />
 

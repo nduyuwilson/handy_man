@@ -53,7 +53,7 @@ public class ProjectDetailsFragment extends Fragment {
     private ItemViewModel itemViewModel;
     private int projectId;
 
-    // View bindings
+    // Correct Bindings for the Modern Layout
     private TextView tvTitle, tvLocation, tvClient, tvGrandTotalTop, tvMaterialTotalTop, tvLabourTotalTop, tvTotalPaidTop, tvBalanceDueTop;
     private TextView tvMaterialTotalTable, tvLabourTotalTable, tvRules;
     
@@ -90,7 +90,7 @@ public class ProjectDetailsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Setup Toolbar
+        // Toolbar
         Toolbar toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
         if (((AppCompatActivity) requireActivity()).getSupportActionBar() != null) {
@@ -98,7 +98,7 @@ public class ProjectDetailsFragment extends Fragment {
         }
         toolbar.setNavigationOnClickListener(v -> Navigation.findNavController(v).navigateUp());
 
-        // Bind Views
+        // Binding IDs from the latest fragment_project_details.xml
         tvTitle = view.findViewById(R.id.tvProjectTitle);
         tvLocation = view.findViewById(R.id.tvProjectLocation);
         tvClient = view.findViewById(R.id.tvClientDetails);
@@ -111,17 +111,13 @@ public class ProjectDetailsFragment extends Fragment {
         tvLabourTotalTable = view.findViewById(R.id.tvLabourTotalTable);
         tvRules = view.findViewById(R.id.tvRules);
 
-        // ViewModels
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
         projectViewModel = new ViewModelProvider(this).get(ProjectViewModel.class);
 
-        // Recycler Views
         setupRecyclerViews(view);
-
-        // Observers
         observeData();
 
-        // Buttons
+        // Button Actions
         view.findViewById(R.id.buttonAddComponent).setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putInt("projectId", projectId);
@@ -133,7 +129,6 @@ public class ProjectDetailsFragment extends Fragment {
         view.findViewById(R.id.buttonGenerateInvoice).setOnClickListener(v -> generateAndSharePdf(false));
         view.findViewById(R.id.buttonGenerateLabourInvoice).setOnClickListener(v -> generateAndSharePdf(true));
 
-        // Options Menu
         requireActivity().addMenuProvider(new MenuProvider() {
             @Override
             public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
@@ -256,76 +251,24 @@ public class ProjectDetailsFragment extends Fragment {
         if (tvBalanceDueTop != null) tvBalanceDueTop.setText(balStr);
     }
 
-    private void showAddPaymentDialog(@Nullable Payment existing) {
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
-        builder.setTitle(existing == null ? "Log Payment" : "Edit Payment");
-        LinearLayout layout = new LinearLayout(requireContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(48, 24, 48, 24);
-
-        final EditText editAmount = new EditText(requireContext());
-        editAmount.setHint("Amount");
-        editAmount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        if (existing != null) editAmount.setText(String.valueOf(existing.getAmount()));
-        layout.addView(editAmount);
-
-        final EditText editMethod = new EditText(requireContext());
-        editMethod.setHint("Method (Cash, M-Pesa, etc.)");
-        if (existing != null) editMethod.setText(existing.getMethod());
-        layout.addView(editMethod);
-
-        final EditText editRef = new EditText(requireContext());
-        editRef.setHint("Reference/Transaction ID");
-        if (existing != null) editRef.setText(existing.getReference());
-        layout.addView(editRef);
-
-        builder.setView(layout);
-        builder.setPositiveButton("Save", (dialog, which) -> {
-            String amtStr = editAmount.getText().toString();
-            String method = editMethod.getText().toString();
-            String ref = editRef.getText().toString();
-            if (!amtStr.isEmpty()) {
-                try {
-                    double amt = Double.parseDouble(amtStr);
-                    if (existing == null) projectViewModel.insertPayment(new Payment(projectId, amt, method, ref));
-                    else {
-                        existing.setAmount(amt);
-                        existing.setMethod(method);
-                        existing.setReference(ref);
-                        projectViewModel.updatePayment(existing);
-                    }
-                } catch (NumberFormatException ignored) {}
-            }
-        });
-        builder.setNegativeButton("Cancel", null).show();
-    }
-
-    private void showPaymentOptions(Payment p) {
-        String[] options = {"Generate Receipt", "Edit Payment", "Remove Payment"};
-        new MaterialAlertDialogBuilder(requireContext()).setTitle("Payment Option").setItems(options, (d, which) -> {
-            if (which == 0) generateReceiptPdf(p);
-            else if (which == 1) showAddPaymentDialog(p);
-            else projectViewModel.deletePayment(p);
+    private void showLabourActivityOptions(LabourActivity activity) {
+        String[] options = {"Generate Invoice", "Edit Activity", "Remove Activity"};
+        new MaterialAlertDialogBuilder(requireContext()).setTitle(activity.getName()).setItems(options, (dialog, which) -> {
+            if (which == 0) generateLabourActivityInvoicePdf(activity);
+            else if (which == 1) showAddLabourDialog(activity);
+            else projectViewModel.deleteLabourActivity(activity);
         }).show();
     }
 
-    private void generateReceiptPdf(Payment p) {
-        File file = PdfGenerator.generateReceipt(requireContext(), currentProject, p);
+    private void generateLabourActivityInvoicePdf(LabourActivity activity) {
+        File file = PdfGenerator.generateLabourActivityInvoice(requireContext(), currentProject, activity);
         if (file != null) {
             Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("application/pdf");
             intent.putExtra(Intent.EXTRA_STREAM, uri);
-            startActivity(Intent.createChooser(intent, "Share Receipt"));
+            startActivity(Intent.createChooser(intent, "Share Labour Invoice"));
         }
-    }
-
-    private void showLabourActivityOptions(LabourActivity activity) {
-        String[] options = {"Edit Activity", "Remove Activity"};
-        new MaterialAlertDialogBuilder(requireContext()).setTitle(activity.getName()).setItems(options, (dialog, which) -> {
-            if (which == 0) showAddLabourDialog(activity);
-            else projectViewModel.deleteLabourActivity(activity);
-        }).show();
     }
 
     private void showAddLabourDialog(@Nullable LabourActivity existing) {
@@ -354,6 +297,65 @@ public class ProjectDetailsFragment extends Fragment {
                 } catch (NumberFormatException ignored) {}
             }
         }).setNegativeButton("Cancel", null).show();
+    }
+
+    private void showPaymentOptions(Payment p) {
+        String[] options = {"Generate Receipt", "Edit Payment", "Remove Payment"};
+        new MaterialAlertDialogBuilder(requireContext()).setTitle("Payment Option").setItems(options, (d, which) -> {
+            if (which == 0) generateReceiptPdf(p);
+            else if (which == 1) showAddPaymentDialog(p);
+            else projectViewModel.deletePayment(p);
+        }).show();
+    }
+
+    private void generateReceiptPdf(Payment p) {
+        File file = PdfGenerator.generateReceipt(requireContext(), currentProject, p);
+        if (file != null) {
+            Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("application/pdf");
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            startActivity(Intent.createChooser(intent, "Share Receipt"));
+        }
+    }
+
+    private void showAddPaymentDialog(@Nullable Payment existing) {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
+        builder.setTitle(existing == null ? "Log Payment" : "Edit Payment");
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 24);
+        final EditText editAmount = new EditText(requireContext());
+        editAmount.setHint("Amount");
+        editAmount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        if (existing != null) editAmount.setText(String.valueOf(existing.getAmount()));
+        layout.addView(editAmount);
+        final EditText editMethod = new EditText(requireContext());
+        editMethod.setHint("Method (Cash, M-Pesa, etc.)");
+        if (existing != null) editMethod.setText(existing.getMethod());
+        layout.addView(editMethod);
+        final EditText editRef = new EditText(requireContext());
+        editRef.setHint("Reference ID");
+        if (existing != null) editRef.setText(existing.getReference());
+        layout.addView(editRef);
+
+        builder.setView(layout);
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String amtStr = editAmount.getText().toString();
+            if (!amtStr.isEmpty()) {
+                try {
+                    double amt = Double.parseDouble(amtStr);
+                    if (existing == null) projectViewModel.insertPayment(new Payment(projectId, amt, editMethod.getText().toString(), editRef.getText().toString()));
+                    else {
+                        existing.setAmount(amt);
+                        existing.setMethod(editMethod.getText().toString());
+                        existing.setReference(editRef.getText().toString());
+                        projectViewModel.updatePayment(existing);
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+        builder.setNegativeButton("Cancel", null).show();
     }
 
     private void showProjectItemOptions(ProjectItem pi) {

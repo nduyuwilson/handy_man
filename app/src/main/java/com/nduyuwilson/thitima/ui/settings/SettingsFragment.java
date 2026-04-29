@@ -29,7 +29,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.firebase.auth.FirebaseAuth;
 import com.nduyuwilson.thitima.R;
+import com.nduyuwilson.thitima.auth.AuthManager;
+import com.nduyuwilson.thitima.auth.LoginActivity;
 import com.nduyuwilson.thitima.data.entity.Item;
 import com.nduyuwilson.thitima.data.model.PaymentMethod;
 import com.nduyuwilson.thitima.data.repository.BackupRepository;
@@ -118,8 +121,20 @@ public class SettingsFragment extends Fragment {
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
             new MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Logout")
-                    .setMessage("Are you sure you want to logout?")
-                    .setPositiveButton("Logout", (dialog, which) -> requireActivity().finish())
+                    .setMessage("Are you sure you want to logout? You will need an internet connection to sign in again.")
+                    .setPositiveButton("Logout", (dialog, which) -> {
+                        // 1. Sign out from Firebase
+                        FirebaseAuth.getInstance().signOut();
+                        
+                        // 2. Clear local auth cache
+                        AuthManager.clearAuthInfo(requireContext());
+                        
+                        // 3. Redirect to LoginActivity
+                        Intent intent = new Intent(requireActivity(), LoginActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        requireActivity().finish();
+                    })
                     .setNegativeButton("Cancel", null)
                     .show();
         });

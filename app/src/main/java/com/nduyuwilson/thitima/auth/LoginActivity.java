@@ -5,6 +5,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -132,6 +133,7 @@ public class LoginActivity extends AppCompatActivity {
 
             // Now verify subscription online
             verifySubscription(user.getUid());
+            Log.d("LoginActivity", "onSignInSuccess: " + user.getUid());
         });
     }
 
@@ -154,6 +156,7 @@ public class LoginActivity extends AppCompatActivity {
                             showError("No active subscription found. Please purchase a plan to access Thitima.");
                         }
                     } else {
+                        Log.d("LoginActivity", "verifySubscription: failed", task.getException());
                         // Firestore call failed – apply cached result if available
                         if (AuthManager.isPremiumCached(this)) {
                             schedulePeriodicSyncWorker();

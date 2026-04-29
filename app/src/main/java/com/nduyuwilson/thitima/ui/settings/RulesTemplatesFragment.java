@@ -17,6 +17,7 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
@@ -52,7 +53,7 @@ public class RulesTemplatesFragment extends Fragment {
             adapter.submitList(templates);
         });
 
-        FloatingActionButton fab = view.findViewById(R.id.fabAddTemplate);
+        ExtendedFloatingActionButton fab = view.findViewById(R.id.fabAddTemplate);
         fab.setOnClickListener(v -> showAddEditDialog(null));
     }
 

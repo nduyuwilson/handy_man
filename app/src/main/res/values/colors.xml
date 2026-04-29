@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="primary">#FF1976D2</color>
-    <color name="primary_variant">#FF1565C0</color>
-    <color name="secondary">#FF03DAC6</color>
-    <color name="secondary_variant">#FF018786</color>
-    <color name="background">#FFFFFFFF</color>
-    <color name="surface">#FFFFFFFF</color>
-    <color name="error">#FFB00020</color>
-    <color name="on_primary">#FFFFFFFF</color>
-    <color name="on_secondary">#FF000000</color>
-    <color name="on_background">#FF000000</color>
-    <color name="on_surface">#FF000000</color>
-    <color name="on_error">#FFFFFFFF</color>
+    <color name="primary">#4CAF82</color>
+    <color name="primary_container">#E8F5E9</color>
+    <color name="on_primary_container">#2E7D32</color>
+    <color name="secondary">#388E3C</color>
+    <color name="background">#F8F9FA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="error">#B00020</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="on_background">#121212</color>
+    <color name="on_surface">#121212</color>
+    <color name="on_error">#FFFFFF</color>
+    <color name="outline">#D1D1D1</color>
+    <color name="surface_variant">#F1F3F4</color>
+    <color name="on_surface_variant">#5F6368</color>
 </resources>

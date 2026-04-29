@@ -72,6 +72,8 @@ dependencies {
     // Guava Android: provides ListenableFuture required by WorkManager 2.9+ in Java projects
     implementation 'com.google.guava:guava:32.1.3-android'
 
+    implementation 'com.google.android.material:material:1.9.0' // Use the latest stable version
+
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

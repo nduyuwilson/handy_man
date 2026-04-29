@@ -36,6 +36,7 @@ import java.util.Map;
 public class PdfGenerator {
 
     private static final int PAGE_HEIGHT = 842;
+    private static final int PAGE_WIDTH = 595;
     private static final int FOOTER_START = 805;
     private static final int CONTENT_END_LIMIT = 780;
 
@@ -54,7 +55,7 @@ public class PdfGenerator {
 
         boolean isLabourOnly = (projectItems == null || projectItems.isEmpty());
 
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, PAGE_HEIGHT, 1).create();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create();
         final PdfDocument.Page[] currentPage = {pdfDocument.startPage(pageInfo)};
         final Canvas[] canvas = {currentPage[0].getCanvas()};
         final int[] y = {110};
@@ -93,7 +94,7 @@ public class PdfGenerator {
 
             for (ProjectItem pi : projectItems) {
                 if (y[0] > CONTENT_END_LIMIT) {
-                    canvas[0] = startNewPage(pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
+                    canvas[0] = startNewPage(context, pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
                     y[0] = 110;
                     drawTableHeader(canvas[0], currency, y[0]);
                     y[0] += 30;
@@ -117,7 +118,7 @@ public class PdfGenerator {
 
         if (labourActivities != null && !labourActivities.isEmpty()) {
             if (y[0] > CONTENT_END_LIMIT) {
-                canvas[0] = startNewPage(pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
+                canvas[0] = startNewPage(context, pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
                 y[0] = 110;
                 drawTableHeader(canvas[0], currency, y[0]);
                 y[0] += 30;
@@ -128,7 +129,7 @@ public class PdfGenerator {
             paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
             for (LabourActivity activity : labourActivities) {
                 if (y[0] > CONTENT_END_LIMIT) {
-                    canvas[0] = startNewPage(pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
+                    canvas[0] = startNewPage(context, pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
                     y[0] = 110;
                     drawTableHeader(canvas[0], currency, y[0]);
                     y[0] += 30;
@@ -148,7 +149,7 @@ public class PdfGenerator {
         
         if (baseLabour > 0) {
             if (y[0] > CONTENT_END_LIMIT) {
-                canvas[0] = startNewPage(pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
+                canvas[0] = startNewPage(context, pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
                 y[0] = 110;
             }
             labourTotal += baseLabour;
@@ -160,7 +161,7 @@ public class PdfGenerator {
         }
 
         if (y[0] > 600) {
-            canvas[0] = startNewPage(pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
+            canvas[0] = startNewPage(context, pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
             y[0] = 110;
         }
         y[0] += 10;
@@ -189,6 +190,10 @@ public class PdfGenerator {
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
         if (paymentMethods != null && !paymentMethods.isEmpty()) {
             for (PaymentMethod pm : paymentMethods) {
+                if (y[0] > CONTENT_END_LIMIT) {
+                    canvas[0] = startNewPage(context, pdfDocument, pageInfo, currentPage, businessName, isLabourOnly, userNumber);
+                    y[0] = 110;
+                }
                 canvas[0].drawText(pm.getDisplayText(), 40, y[0], paint);
                 y[0] += 15;
             }
@@ -205,110 +210,43 @@ public class PdfGenerator {
 
         pdfDocument.finishPage(currentPage[0]);
         File filePath = new File(context.getExternalCacheDir(), "Invoice_" + project.getId() + ".pdf");
-        try { pdfDocument.writeTo(new FileOutputStream(filePath)); } catch (IOException e) { return null; } finally { pdfDocument.close(); }
-        return filePath;
-    }
-
-    public static File generateLabourActivityInvoice(Context context, Project project, LabourActivity activity) {
-        PdfDocument pdfDocument = new PdfDocument();
-        Paint paint = new Paint();
-        Paint titlePaint = new Paint();
-        Paint accentPaint = new Paint();
-        Paint footerPaint = new Paint();
-
-        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
-        String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
-        String userName = prefs.getString("user_name", "Professional Installer");
-        String userNumber = prefs.getString("user_number", "");
-        String currency = Formatter.getCurrencySymbol(context);
-
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, PAGE_HEIGHT, 1).create();
-        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
-        Canvas canvas = page.getCanvas();
-
-        drawHeader(context, canvas, businessName, true);
-        drawWatermark(canvas, businessName, userNumber);
-        drawFooter(canvas, businessName);
-
-        int x = 40;
-        int y = 120;
-        paint.setTextSize(12);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("LABOUR INVOICE DETAILS", x, y, paint);
-        y += 25;
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        canvas.drawText("Invoice No: LAB-" + activity.getId(), x, y, paint);
-        y += 20;
-        canvas.drawText("Date: " + new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date(activity.getDate())), x, y, paint);
-        y += 20;
-        canvas.drawText("Project: " + project.getName(), x, y, paint);
-
-        drawProjectAndClientInfo(canvas, project, y + 40);
-        y += 120;
-
-        accentPaint.setAlpha(255);
-        accentPaint.setColor(Color.rgb(25, 118, 210));
-        canvas.drawRect(35, y - 15, 555, y + 10, accentPaint);
-        paint.setColor(Color.WHITE);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("Service Description", x, y, paint);
-        canvas.drawText("Category", x + 300, y, paint);
-        canvas.drawText("Cost (" + currency + ")", x + 420, y, paint);
-
-        y += 30;
-        paint.setColor(Color.BLACK);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        canvas.drawText(activity.getName(), x, y, paint);
-        canvas.drawText("Labour Activity", x + 300, y, paint);
-        canvas.drawText(Formatter.formatNumber(activity.getCost()), x + 420, y, paint);
-
-        y += 60;
-        paint.setTextSize(16);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("TOTAL AMOUNT: " + currency + " " + Formatter.formatNumber(activity.getCost()), x, y, paint);
-
-        pdfDocument.finishPage(page);
-        File filePath = new File(context.getExternalCacheDir(), "Labour_Invoice_" + activity.getId() + ".pdf");
-        try { pdfDocument.writeTo(new FileOutputStream(filePath)); } catch (IOException e) { return null; } finally { pdfDocument.close(); }
+        try {
+            FileOutputStream fos = new FileOutputStream(filePath);
+            pdfDocument.writeTo(fos);
+            fos.close();
+        } catch (IOException e) {
+            return null;
+        } finally {
+            pdfDocument.close();
+        }
         return filePath;
     }
 
     public static File generateReceipt(Context context, Project project, Payment payment) {
         PdfDocument pdfDocument = new PdfDocument();
-        Paint paint = new Paint();
-        Paint titlePaint = new Paint();
-        Paint accentPaint = new Paint();
-        Paint footerPaint = new Paint();
-
-        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
-        String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
-        String userName = prefs.getString("user_name", "Professional Installer");
-        String userNumber = prefs.getString("user_number", "");
-        String currency = Formatter.getCurrencySymbol(context);
-
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, PAGE_HEIGHT, 1).create();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        // Header
-        accentPaint.setColor(Color.rgb(25, 118, 210));
-        canvas.drawRect(75, 15, 520, 75, accentPaint);
+        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
+        String userNumber = prefs.getString("user_number", "");
+        String currency = Formatter.getCurrencySymbol(context);
 
-        titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        titlePaint.setTextSize(22);
-        titlePaint.setColor(Color.WHITE);
-        titlePaint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(businessName.toUpperCase(), 297, 45, titlePaint);
-
-        titlePaint.setTextSize(14);
-        canvas.drawText("OFFICIAL RECEIPT", 297, 65, titlePaint);
-
+        drawHeader(context, canvas, businessName, false);
         drawWatermark(canvas, businessName, userNumber);
+        drawFooter(canvas, businessName);
+
+        Paint paint = new Paint();
+        paint.setTextSize(14);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("OFFICIAL RECEIPT", 297, 65, paint);
 
         int x = 40;
         int y = 120;
+        paint.setTextAlign(Paint.Align.LEFT);
         paint.setTextSize(12);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         canvas.drawText("RECEIPT DETAILS", x, y, paint);
         y += 25;
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
@@ -323,12 +261,13 @@ public class PdfGenerator {
         canvas.drawText("RECEIVED FROM", x, y, paint);
         y += 25;
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
-        canvas.drawText("Client Name: " + project.getClientName(), x, y, paint);
+        canvas.drawText("Client: " + project.getClientName(), x, y, paint);
         y += 15;
-        canvas.drawText("Client Contact: " + project.getClientContact(), x, y, paint);
+        canvas.drawText("Contact: " + project.getClientContact(), x, y, paint);
 
         y += 50;
-        accentPaint.setAlpha(255);
+        Paint accentPaint = new Paint();
+        accentPaint.setColor(Color.rgb(25, 118, 210));
         canvas.drawRect(35, y - 15, 555, y + 10, accentPaint);
         paint.setColor(Color.WHITE);
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
@@ -354,11 +293,84 @@ public class PdfGenerator {
         y += 20;
         canvas.drawText("Signature / Stamp", x, y, paint);
 
-        drawFooter(canvas, businessName);
-
         pdfDocument.finishPage(page);
         File filePath = new File(context.getExternalCacheDir(), "Receipt_" + payment.getId() + ".pdf");
-        try { pdfDocument.writeTo(new FileOutputStream(filePath)); } catch (IOException e) { return null; } finally { pdfDocument.close(); }
+        try {
+            FileOutputStream fos = new FileOutputStream(filePath);
+            pdfDocument.writeTo(fos);
+            fos.close();
+        } catch (IOException e) {
+            return null;
+        } finally {
+            pdfDocument.close();
+        }
+        return filePath;
+    }
+
+    public static File generateLabourActivityInvoice(Context context, Project project, LabourActivity activity) {
+        PdfDocument pdfDocument = new PdfDocument();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+
+        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
+        String userNumber = prefs.getString("user_number", "");
+        String currency = Formatter.getCurrencySymbol(context);
+
+        drawHeader(context, canvas, businessName, true);
+        drawWatermark(canvas, businessName, userNumber);
+        drawFooter(canvas, businessName);
+
+        int x = 40;
+        int y = 120;
+        Paint paint = new Paint();
+        paint.setTextSize(12);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        canvas.drawText("LABOUR INVOICE DETAILS", x, y, paint);
+        y += 25;
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        canvas.drawText("Invoice No: LAB-" + activity.getId(), x, y, paint);
+        y += 20;
+        canvas.drawText("Date: " + new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date(activity.getDate())), x, y, paint);
+        y += 20;
+        canvas.drawText("Project: " + project.getName(), x, y, paint);
+
+        drawProjectAndClientInfo(canvas, project, y + 40);
+        y += 120;
+
+        Paint accentPaint = new Paint();
+        accentPaint.setColor(Color.rgb(25, 118, 210));
+        canvas.drawRect(35, y - 15, 555, y + 10, accentPaint);
+        paint.setColor(Color.WHITE);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        canvas.drawText("Service Description", x, y, paint);
+        canvas.drawText("Category", x + 300, y, paint);
+        canvas.drawText("Cost (" + currency + ")", x + 420, y, paint);
+
+        y += 30;
+        paint.setColor(Color.BLACK);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        canvas.drawText(activity.getName(), x, y, paint);
+        canvas.drawText("Labour Activity", x + 300, y, paint);
+        canvas.drawText(Formatter.formatNumber(activity.getCost()), x + 420, y, paint);
+
+        y += 60;
+        paint.setTextSize(16);
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        canvas.drawText("TOTAL AMOUNT: " + currency + " " + Formatter.formatNumber(activity.getCost()), x, y, paint);
+
+        pdfDocument.finishPage(page);
+        File filePath = new File(context.getExternalCacheDir(), "Labour_Invoice_" + activity.getId() + ".pdf");
+        try {
+            FileOutputStream fos = new FileOutputStream(filePath);
+            pdfDocument.writeTo(fos);
+            fos.close();
+        } catch (IOException e) {
+            return null;
+        } finally {
+            pdfDocument.close();
+        }
         return filePath;
     }
 
@@ -367,13 +379,15 @@ public class PdfGenerator {
         accentPaint.setColor(Color.rgb(25, 118, 210));
         canvas.drawRect(75, 15, 520, 75, accentPaint);
 
-        Drawable drawable = ContextCompat.getDrawable(context, R.drawable.elec_man);
-        if (drawable != null) {
-            drawable.setTintList(null);
-            drawable.setBounds(15, 20, 65, 70);
-            drawable.draw(canvas);
-            drawable.setBounds(530, 20, 580, 70);
-            drawable.draw(canvas);
+        if (context != null) {
+            Drawable drawable = ContextCompat.getDrawable(context, R.drawable.elec_man);
+            if (drawable != null) {
+                drawable.setTintList(null);
+                drawable.setBounds(15, 20, 65, 70);
+                drawable.draw(canvas);
+                drawable.setBounds(530, 20, 580, 70);
+                drawable.draw(canvas);
+            }
         }
 
         Paint titlePaint = new Paint();
@@ -390,14 +404,14 @@ public class PdfGenerator {
     private static void drawFooter(Canvas canvas, String businessName) {
         Paint accentPaint = new Paint();
         accentPaint.setColor(Color.rgb(25, 118, 210));
-        canvas.drawRect(0, 805, 595, 842, accentPaint);
+        canvas.drawRect(0, 805, PAGE_WIDTH, PAGE_HEIGHT, accentPaint);
 
         Paint footerPaint = new Paint();
         footerPaint.setColor(Color.WHITE);
         footerPaint.setTextSize(8);
         footerPaint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("© Designed by undrix Int | 0716729060 | wilsonundrix@gmail.com | Wilson Maina", 595/2, 822, footerPaint);
-        canvas.drawText("Generated via " + businessName + " Management System", 595/2, 835, footerPaint);
+        canvas.drawText("© Designed by undrix Int | 0716729060 | wilsonundrix@gmail.com | Wilson Maina", PAGE_WIDTH / 2, 822, footerPaint);
+        canvas.drawText("Generated via " + businessName + " Management System", PAGE_WIDTH / 2, 835, footerPaint);
     }
 
     private static void drawWatermark(Canvas canvas, String businessName, String userNumber) {
@@ -444,11 +458,11 @@ public class PdfGenerator {
         canvas.drawText("Total (" + currency + ")", 500, y, paint);
     }
 
-    private static Canvas startNewPage(PdfDocument pdfDocument, PdfDocument.PageInfo pageInfo, PdfDocument.Page[] currentPage, String businessName, boolean isLabourOnly, String userNumber) {
+    private static Canvas startNewPage(Context context, PdfDocument pdfDocument, PdfDocument.PageInfo pageInfo, PdfDocument.Page[] currentPage, String businessName, boolean isLabourOnly, String userNumber) {
         pdfDocument.finishPage(currentPage[0]);
         currentPage[0] = pdfDocument.startPage(pageInfo);
         Canvas canvas = currentPage[0].getCanvas();
-        drawHeader(null, canvas, businessName, isLabourOnly);
+        drawHeader(context, canvas, businessName, isLabourOnly);
         drawWatermark(canvas, businessName, userNumber);
         drawFooter(canvas, businessName);
         return canvas;

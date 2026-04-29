@@ -3,182 +3,344 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="?attr/colorSurface"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingHorizontal="24dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="32dp">
 
-        <TextView
-            android:id="@+id/textViewHeader"
+        <!-- Animated Header with Accent -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:text="New Project Details"
-            android:textAppearance="?attr/textAppearanceHeadlineMedium"
-            android:textColor="?attr/colorPrimary" />
+            android:layout_marginBottom="32dp"
+            android:animateLayoutChanges="true"
+            android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/textViewHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:fontFamily="sans-serif-medium"
+                android:text="✨ New Project"
+                android:textAppearance="?attr/textAppearanceDisplaySmall"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Let's bring your vision to life"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <!-- Project Name with Floating Icon -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Project Name">
+            android:layout_marginBottom="20dp"
+            android:hint="Project Name"
+            app:counterEnabled="true"
+            app:counterMaxLength="100"
+            app:placeholderText="e.g., Skyline Tower"
+            app:placeholderTextColor="?attr/colorOnSurfaceVariant"
+            app:startIconDrawable="@drawable/ic_add"
+            app:startIconTint="?attr/colorPrimary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editTextProjectName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapWords" />
+                android:contentDescription="Enter project name"
+                android:inputType="textCapWords"
+                android:maxLength="100" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Project Status with Chip-like Dropdown -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Project Status">
+            android:layout_marginBottom="20dp"
+            android:hint="Project Status"
+            app:errorEnabled="true"
+            app:startIconDrawable="@drawable/ic_add"
+            app:startIconTint="?attr/colorPrimary">
 
             <com.google.android.material.textfield.MaterialAutoCompleteTextView
                 android:id="@+id/autoCompleteStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:contentDescription="Select project status from dropdown"
                 android:inputType="none" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Location with Map Icon -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Location">
+            android:layout_marginBottom="20dp"
+            android:hint="Location"
+            app:counterEnabled="true"
+            app:counterMaxLength="200"
+            app:startIconDrawable="@drawable/ic_add"
+            app:startIconTint="?attr/colorPrimary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editTextLocation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapWords" />
+                android:contentDescription="Enter project location"
+                android:inputType="textCapWords"
+                android:maxLength="200" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Description with Styling -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Description">
+            android:layout_marginBottom="20dp"
+            android:hint="Description"
+            app:counterEnabled="true"
+            app:counterMaxLength="500"
+            app:startIconDrawable="@drawable/ic_add"
+            app:startIconTint="?attr/colorPrimary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editTextDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:backgroundTint="?attr/colorSurfaceVariant"
+                android:contentDescription="Enter project description"
                 android:gravity="top"
                 android:inputType="textMultiLine"
-                android:minLines="3" />
+                android:maxLength="500"
+                android:maxLines="6"
+                android:minLines="4"
+                android:scrollbars="vertical" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <LinearLayout
+        <!-- Cost Card Section with Material Design Card -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:baselineAligned="false">
+            android:layout_marginVertical="12dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp">
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="16dp"
-                android:hint="Labour Cost (Fixed)">
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextLabourCost"
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="numberDecimal" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_marginBottom="12dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="💰 Budget Breakdown"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorPrimary" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:layout_marginBottom="16dp"
-                android:hint="Labour % (of Materials)">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextLabourPercent"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="numberDecimal" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
 
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:hint="Labour Cost"
+                        app:errorEnabled="true"
+                        app:helperText="USD"
+                        app:helperTextEnabled="true"
+                        app:startIconDrawable="@drawable/ic_add"
+                        app:startIconTint="?attr/colorPrimary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextLabourCost"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="Enter fixed labour cost"
+                            android:digits="0123456789."
+                            android:hint="0.00"
+                            android:inputType="numberDecimal" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:hint="Labour %"
+                        app:errorEnabled="true"
+                        app:helperText="% of materials"
+                        app:helperTextEnabled="true"
+                        app:startIconDrawable="@drawable/ic_add"
+                        app:startIconTint="?attr/colorPrimary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextLabourPercent"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="Enter labour percentage"
+                            android:digits="0123456789."
+                            android:hint="0-100"
+                            android:inputType="numberDecimal" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Rules of Engagement with Custom Styling -->
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayoutRules"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp"
             android:hint="Rules of Engagement"
-            app:endIconMode="custom"
-            app:endIconDrawable="@android:drawable/ic_menu_agenda"
+            app:counterEnabled="true"
+            app:counterMaxLength="1000"
             app:endIconContentDescription="Select from template"
-            android:id="@+id/textInputLayoutRules">
+            app:endIconDrawable="@drawable/ic_add"
+            app:endIconMode="custom"
+            app:endIconTint="?attr/colorPrimary"
+            app:placeholderText="Define project guidelines and terms..."
+            app:placeholderTextColor="?attr/colorOnSurfaceVariant"
+            app:startIconDrawable="@drawable/ic_add"
+            app:startIconTint="?attr/colorPrimary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editTextRules"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:contentDescription="Enter rules of engagement"
                 android:inputType="textMultiLine"
-                android:minLines="2" />
+                android:maxLength="1000"
+                android:maxLines="5"
+                android:minLines="3"
+                android:scrollbars="vertical" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
+        <!-- Client Section with Card Design -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"
-            android:text="Client Information"
-            android:textAppearance="?attr/textAppearanceTitleLarge" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Client Name">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editTextClientName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textCapWords" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
-            android:hint="Client Contact (Phone/Email)">
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editTextClientContact"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="text" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:orientation="vertical"
+                android:padding="16dp">
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:accessibilityHeading="true"
+                    android:contentDescription="Client information section"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="👤 Client Details"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorPrimary" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="Client Name"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="100"
+                    app:startIconDrawable="@drawable/ic_add"
+                    app:startIconTint="?attr/colorPrimary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextClientName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="Enter client name"
+                        android:inputType="textCapWords"
+                        android:maxLength="100" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Contact Information"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="100"
+                    app:startIconDrawable="@drawable/ic_add"
+                    app:startIconTint="?attr/colorPrimary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextClientContact"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="Enter client phone or email"
+                        android:hint="Phone or Email"
+                        android:inputType="phone|textEmailAddress"
+                        android:maxLength="100" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Gradient Button with Animation -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonSaveProject"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="12dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Button to create project"
             android:text="Create Project"
-            app:cornerRadius="8dp" />
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textStyle="bold"
+            android:translationZ="2dp"
+            app:cornerRadius="28dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
+            app:iconTint="?attr/colorOnPrimary" />
+
+        <!-- Decorative Element -->
+        <View
+            android:layout_width="48dp"
+            android:layout_height="3dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="24dp"
+            android:alpha="0.5"
+            android:background="@drawable/ic_add" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

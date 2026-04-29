@@ -1,0 +1,87 @@
+{
+  "project_info": {
+    "project_number": "473077574558",
+    "firebase_url": "https://work-df988-default-rtdb.firebaseio.com",
+    "project_id": "work-df988",
+    "storage_bucket": "work-df988.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473077574558:android:e413fb86a0f63c8662448f",
+        "android_client_info": {
+          "package_name": "com.example.watermanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7Nt-cnKDEg5G3DG3Ft3MHQFn99Vimauc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473077574558:android:87fc8a9b8a74d7d762448f",
+        "android_client_info": {
+          "package_name": "com.example.zoombuds"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7Nt-cnKDEg5G3DG3Ft3MHQFn99Vimauc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473077574558:android:293be04c284f4d2862448f",
+        "android_client_info": {
+          "package_name": "com.idealogic.zoomiesplay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7Nt-cnKDEg5G3DG3Ft3MHQFn99Vimauc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473077574558:android:43609884c050951762448f",
+        "android_client_info": {
+          "package_name": "com.nduyuwilson.thitima"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7Nt-cnKDEg5G3DG3Ft3MHQFn99Vimauc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

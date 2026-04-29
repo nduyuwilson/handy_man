@@ -1,5 +1,6 @@
 package com.nduyuwilson.thitima;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -11,6 +12,8 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.nduyuwilson.thitima.auth.AuthManager;
+import com.nduyuwilson.thitima.auth.LoginActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -20,10 +23,18 @@ public class MainActivity extends AppCompatActivity {
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        // Remove check trial period for now
-        //checkTrialPeriod();
+        // ── Auth gate ────────────────────────────────────────────────────────
+        // If the user's grace period has expired or they were never logged in,
+        // send them back to the login screen.
+        if (!AuthManager.hasAccess(this)) {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
+        setContentView(R.layout.activity_main);
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
         

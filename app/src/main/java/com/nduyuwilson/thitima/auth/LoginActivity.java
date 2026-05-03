@@ -41,7 +41,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputEditText etEmail, etPassword;
     private MaterialButton btnLogin;
     private LinearProgressIndicator progressBar;
-    private TextView tvError, tvOfflineNotice;
+    private TextView tvError, tvOfflineNotice, tvRegisterLink;
 
     private FirebaseAuth mAuth;
 
@@ -68,6 +68,9 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         btnLogin.setOnClickListener(v -> attemptLogin());
+        tvRegisterLink.setOnClickListener(v -> {
+            startActivity(new Intent(this, RegisterActivity.class));
+        });
     }
 
     private void bindViews() {
@@ -79,6 +82,7 @@ public class LoginActivity extends AppCompatActivity {
         progressBar    = findViewById(R.id.progress_bar);
         tvError        = findViewById(R.id.tv_error);
         tvOfflineNotice = findViewById(R.id.tv_offline_notice);
+        tvRegisterLink = findViewById(R.id.tv_register_link);
     }
 
     // ---------------------------------------------------------------
@@ -138,14 +142,32 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void verifySubscription(String uid) {
-        com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                .collection("users")
+        com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        db.collection("users")
                 .document(uid)
                 .get()
                 .addOnCompleteListener(task -> {
                     setLoading(false);
                     if (task.isSuccessful() && task.getResult() != null) {
-                        Boolean isPremium = task.getResult().getBoolean("isPremium");
+                        com.google.firebase.firestore.DocumentSnapshot doc = task.getResult();
+                        
+                        // 1. Check Device ID
+                        String currentDeviceId = AuthManager.getDeviceId(this);
+                        String storedDeviceId = doc.getString("deviceId");
+
+                        if (storedDeviceId == null) {
+                            // First time login - link this device
+                            db.collection("users").document(uid).update("deviceId", currentDeviceId);
+                        } else if (!storedDeviceId.equals(currentDeviceId)) {
+                            // Device mismatch
+                            mAuth.signOut();
+                            AuthManager.clearAuthInfo(this);
+                            showError("This account is linked to another device. Please contact support to reset.");
+                            return;
+                        }
+
+                        // 2. Check Subscription
+                        Boolean isPremium = doc.getBoolean("isPremium");
                         boolean premium = Boolean.TRUE.equals(isPremium);
                         AuthManager.saveSubscriptionStatus(this, premium);
 

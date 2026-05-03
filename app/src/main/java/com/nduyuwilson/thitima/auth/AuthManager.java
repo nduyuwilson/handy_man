@@ -2,6 +2,7 @@ package com.nduyuwilson.thitima.auth;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.provider.Settings;
 
 /**
  * Manages local caching of Firebase auth state and subscription status.
@@ -93,6 +94,14 @@ public class AuthManager {
         long remaining = GRACE_PERIOD_MS - elapsed;
         if (remaining <= 0) return 0;
         return (int) (remaining / (24 * 60 * 60 * 1000L));
+    }
+
+    /**
+     * Returns a unique ID for the current device.
+     * Uses ANDROID_ID, which is stable for the life of the app install.
+     */
+    public static String getDeviceId(Context ctx) {
+        return Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
     }
 
     // -------------------------------------------------------------------------

@@ -18,7 +18,7 @@
             android:id="@+id/img_logo"
             android:layout_width="96dp"
             android:layout_height="96dp"
-            android:layout_marginTop="64dp"
+            android:layout_marginTop="48dp"
             android:src="@mipmap/ic_launcher_round"
             android:contentDescription="Thitima Logo" />
 
@@ -38,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Sign in to continue"
+            android:text="Create an account to get started"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp" />
 
@@ -46,7 +46,7 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="32dp"
             app:cardBackgroundColor="?attr/colorSurface"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp">
@@ -100,6 +100,30 @@
                         android:inputType="textPassword"
                         android:textColor="?attr/colorOnSurface"
                         android:textColorHint="?attr/colorOnSurfaceVariant"
+                        android:imeOptions="actionNext" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Confirm Password field -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_confirm_password"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:hint="Confirm Password"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:hintTextColor="?attr/colorOnSurfaceVariant"
+                    app:passwordToggleEnabled="true"
+                    app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
+                    app:startIconTint="?attr/colorPrimary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_confirm_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="?attr/colorOnSurfaceVariant"
                         android:imeOptions="actionDone" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -113,13 +137,13 @@
                     android:textSize="13sp"
                     android:visibility="gone" />
 
-                <!-- Sign In button -->
+                <!-- Register button -->
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_login"
+                    android:id="@+id/btn_register"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginTop="24dp"
-                    android:text="Sign In"
+                    android:text="Register"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:backgroundTint="?attr/colorPrimary"
@@ -138,38 +162,16 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Offline notice -->
         <TextView
-            android:id="@+id/tv_offline_notice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:gravity="center"
-            android:padding="12dp"
-            android:background="?attr/colorPrimaryContainer"
-            android:text="No internet connection. If you have previously signed in, tap Sign In to continue offline."
-            android:textColor="?attr/colorPrimary"
-            android:textSize="12sp"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/tv_register_link"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Don't have an account? Register"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <TextView
+            android:id="@+id/tv_login_link"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:layout_marginBottom="32dp"
-            android:text="Contact support if you need help"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="12sp" />
+            android:text="Already have an account? Sign In"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 </ScrollView>

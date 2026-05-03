@@ -47,6 +47,7 @@ public class BackupRepository {
             data.projects = db.projectDao().getAllProjectsSync();
             data.items = db.itemDao().getAllItemsSync();
             data.itemVariants = db.itemVariantDao().getAllVariantsSync();
+            data.categories = db.categoryDao().getAllCategoriesSync();
             data.projectItems = db.projectItemDao().getAllProjectItemsSync();
             data.labourActivities = db.labourActivityDao().getAllActivitiesSync();
             data.payments = db.paymentDao().getAllPaymentsSync();
@@ -147,6 +148,9 @@ public class BackupRepository {
                         db.projectDao().deleteAll();
                         db.itemDao().deleteAll();
 
+                        if (data.categories != null) {
+                            for (var category : data.categories) db.categoryDao().insert(category);
+                        }
                         if (data.items != null) {
                             for (var item : data.items) db.itemDao().insert(item);
                         }

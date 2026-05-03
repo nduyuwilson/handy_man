@@ -12,7 +12,7 @@ public class Item {
     private double buyingPrice;
     private double sellingPrice;
     private String imageUri;
-    private int categoryId;
+    private int categoryId = -1;
 
     public Item(String name, String description, double buyingPrice, double sellingPrice, String imageUri, int categoryId) {
         this.name = name;

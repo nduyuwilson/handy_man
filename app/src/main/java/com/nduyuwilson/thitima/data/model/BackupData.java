@@ -1,5 +1,6 @@
 package com.nduyuwilson.thitima.data.model;
 
+import com.nduyuwilson.thitima.data.entity.Category;
 import com.nduyuwilson.thitima.data.entity.Item;
 import com.nduyuwilson.thitima.data.entity.ItemVariant;
 import com.nduyuwilson.thitima.data.entity.LabourActivity;
@@ -22,6 +23,7 @@ public class BackupData {
     public List<Payment> payments;
     public List<Worker> workers;
     public List<WorkerPayment> workerPayments;
+    public List<Category> categories;
     public SettingsData settings;
 
     public BackupData() {}

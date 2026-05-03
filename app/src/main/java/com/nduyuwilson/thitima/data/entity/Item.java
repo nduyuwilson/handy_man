@@ -12,13 +12,15 @@ public class Item {
     private double buyingPrice;
     private double sellingPrice;
     private String imageUri;
+    private int categoryId;
 
-    public Item(String name, String description, double buyingPrice, double sellingPrice, String imageUri) {
+    public Item(String name, String description, double buyingPrice, double sellingPrice, String imageUri, int categoryId) {
         this.name = name;
         this.description = description;
         this.buyingPrice = buyingPrice;
         this.sellingPrice = sellingPrice;
         this.imageUri = imageUri;
+        this.categoryId = categoryId;
     }
 
     public int getId() { return id; }
@@ -33,4 +35,6 @@ public class Item {
     public void setSellingPrice(double sellingPrice) { this.sellingPrice = sellingPrice; }
     public String getImageUri() { return imageUri; }
     public void setImageUri(String imageUri) { this.imageUri = imageUri; }
+    public int getCategoryId() { return categoryId; }
+    public void setCategoryId(int categoryId) { this.categoryId = categoryId; }
 }

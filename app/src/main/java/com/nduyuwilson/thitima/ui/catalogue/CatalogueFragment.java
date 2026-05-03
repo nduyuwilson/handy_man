@@ -34,8 +34,11 @@ import java.util.List;
 public class CatalogueFragment extends Fragment {
 
     private ItemViewModel itemViewModel;
+    private com.nduyuwilson.thitima.viewmodel.CategoryViewModel categoryViewModel;
+    private com.google.android.material.chip.ChipGroup chipGroupCategories;
     private CatalogueAdapter adapter;
     private List<Item> allItems = new ArrayList<>();
+    private int currentCategoryId = -1; // -1 means "All"
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -67,9 +70,14 @@ public class CatalogueFragment extends Fragment {
         recyclerView.setAdapter(adapter);
 
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
+        categoryViewModel = new ViewModelProvider(this).get(com.nduyuwilson.thitima.viewmodel.CategoryViewModel.class);
+
+        chipGroupCategories = view.findViewById(R.id.chipGroupCategories);
+        setupCategoryChips();
+
         itemViewModel.getAllItems().observe(getViewLifecycleOwner(), items -> {
             allItems = items;
-            adapter.submitList(items);
+            applyFilters();
         });
 
         FloatingActionButton fab = view.findViewById(R.id.fabAddItem);
@@ -81,6 +89,11 @@ public class CatalogueFragment extends Fragment {
             @Override
             public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
                 menuInflater.inflate(R.menu.search_menu, menu);
+                // Add Manage Categories option
+                menu.add(0, 100, 0, "Manage Categories")
+                    .setIcon(android.R.drawable.ic_menu_edit)
+                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+
                 MenuItem searchItem = menu.findItem(R.id.action_search);
                 SearchView searchView = (SearchView) searchItem.getActionView();
                 searchView.setQueryHint("Search components...");
@@ -101,9 +114,107 @@ public class CatalogueFragment extends Fragment {
 
             @Override
             public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                if (menuItem.getItemId() == 100) {
+                    showManageCategoriesDialog();
+                    return true;
+                }
                 return false;
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
+    }
+
+    private void setupCategoryChips() {
+        categoryViewModel.getAllCategories().observe(getViewLifecycleOwner(), categories -> {
+            // Keep the "All" chip, remove others
+            int childCount = chipGroupCategories.getChildCount();
+            for (int i = childCount - 1; i >= 0; i--) {
+                View child = chipGroupCategories.getChildAt(i);
+                if (child.getId() != R.id.chipAll) {
+                    chipGroupCategories.removeView(child);
+                }
+            }
+
+            for (com.nduyuwilson.thitima.data.entity.Category category : categories) {
+                com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(requireContext(), null, com.google.android.material.R.attr.chipStyle);
+                chip.setText(category.getName());
+                chip.setCheckable(true);
+                chip.setTag(category.getId());
+                chipGroupCategories.addView(chip);
+            }
+        });
+
+        chipGroupCategories.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.isEmpty() || checkedIds.get(0) == R.id.chipAll) {
+                currentCategoryId = -1;
+            } else {
+                View chip = group.findViewById(checkedIds.get(0));
+                currentCategoryId = (int) chip.getTag();
+            }
+            applyFilters();
+        });
+    }
+
+    private void showManageCategoriesDialog() {
+        categoryViewModel.getAllCategories().observe(getViewLifecycleOwner(), categories -> {
+            if (categories == null) return;
+            
+            String[] names = new String[categories.size()];
+            for (int i = 0; i < categories.size(); i++) {
+                names[i] = categories.get(i).getName();
+            }
+
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Manage Categories")
+                    .setItems(names, (dialog, which) -> {
+                        confirmDeleteCategory(categories.get(which));
+                    })
+                    .setNeutralButton("Add New", (dialog, which) -> {
+                        showAddCategoryDialog();
+                    })
+                    .setPositiveButton("Done", null)
+                    .show();
+        });
+    }
+
+    private void confirmDeleteCategory(com.nduyuwilson.thitima.data.entity.Category category) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Delete Category")
+                .setMessage("Delete '" + category.getName() + "'? Items in this category will become uncategorized.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    categoryViewModel.delete(category);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showAddCategoryDialog() {
+        com.google.android.material.textfield.TextInputEditText input = new com.google.android.material.textfield.TextInputEditText(requireContext());
+        com.google.android.material.textfield.TextInputLayout layout = new com.google.android.material.textfield.TextInputLayout(requireContext());
+        layout.setPadding(48, 24, 48, 24);
+        layout.setHint("Category Name");
+        layout.addView(input);
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Add New Category")
+                .setView(layout)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String name = input.getText().toString().trim();
+                    if (!android.text.TextUtils.isEmpty(name)) {
+                        categoryViewModel.insert(new com.nduyuwilson.thitima.data.entity.Category(name));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void applyFilters() {
+        List<Item> filtered = new ArrayList<>();
+        for (Item item : allItems) {
+            if (currentCategoryId == -1 || item.getCategoryId() == currentCategoryId) {
+                filtered.add(item);
+            }
+        }
+        adapter.submitList(filtered);
     }
 
     private void showItemManagementDialog(Item item) {

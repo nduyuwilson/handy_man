@@ -29,10 +29,13 @@ import com.nduyuwilson.thitima.viewmodel.ItemViewModel;
 public class AddItemFragment extends Fragment {
 
     private TextInputEditText editTextName, editTextDescription, editTextBuyingPrice, editTextSellingPrice;
+    private android.widget.AutoCompleteTextView autoCompleteCategory;
     private ImageView imageViewPreview;
     private ItemViewModel itemViewModel;
+    private com.nduyuwilson.thitima.viewmodel.CategoryViewModel categoryViewModel;
     private String selectedImageUri = "";
     private int itemId = -1;
+    private int selectedCategoryId = -1;
     private Item existingItem;
 
     private final ActivityResultLauncher<String> mGetContent = registerForActivityResult(
@@ -68,14 +71,19 @@ public class AddItemFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
+        categoryViewModel = new ViewModelProvider(this).get(com.nduyuwilson.thitima.viewmodel.CategoryViewModel.class);
 
         editTextName = view.findViewById(R.id.editTextItemName);
         editTextDescription = view.findViewById(R.id.editTextItemDescription);
         editTextBuyingPrice = view.findViewById(R.id.editTextBuyingPrice);
         editTextSellingPrice = view.findViewById(R.id.editTextSellingPrice);
+        autoCompleteCategory = view.findViewById(R.id.autoCompleteCategory);
         imageViewPreview = view.findViewById(R.id.imageViewItemPreview);
 
+        setupCategoryDropdown();
+
         view.findViewById(R.id.fabSelectImage).setOnClickListener(v -> mGetContent.launch("image/*"));
+        view.findViewById(R.id.btnAddCategory).setOnClickListener(v -> showAddCategoryDialog());
 
         Button buttonSave = view.findViewById(R.id.buttonSaveItem);
         TextView textViewHeader = view.findViewById(R.id.textViewHeader);
@@ -94,12 +102,56 @@ public class AddItemFragment extends Fragment {
         buttonSave.setOnClickListener(v -> saveItem(v));
     }
 
+    private void setupCategoryDropdown() {
+        categoryViewModel.getAllCategories().observe(getViewLifecycleOwner(), categories -> {
+            android.widget.ArrayAdapter<com.nduyuwilson.thitima.data.entity.Category> adapter = 
+                new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
+            autoCompleteCategory.setAdapter(adapter);
+
+            if (existingItem != null) {
+                for (com.nduyuwilson.thitima.data.entity.Category cat : categories) {
+                    if (cat.getId() == existingItem.getCategoryId()) {
+                        autoCompleteCategory.setText(cat.getName(), false);
+                        selectedCategoryId = cat.getId();
+                        break;
+                    }
+                }
+            }
+        });
+
+        autoCompleteCategory.setOnItemClickListener((parent, view, position, id) -> {
+            com.nduyuwilson.thitima.data.entity.Category selected = (com.nduyuwilson.thitima.data.entity.Category) parent.getItemAtPosition(position);
+            selectedCategoryId = selected.getId();
+        });
+    }
+
+    private void showAddCategoryDialog() {
+        com.google.android.material.textfield.TextInputEditText input = new com.google.android.material.textfield.TextInputEditText(requireContext());
+        com.google.android.material.textfield.TextInputLayout layout = new com.google.android.material.textfield.TextInputLayout(requireContext());
+        layout.setPadding(48, 24, 48, 24);
+        layout.setHint("Category Name");
+        layout.addView(input);
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Add New Category")
+                .setView(layout)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String name = input.getText().toString().trim();
+                    if (!TextUtils.isEmpty(name)) {
+                        categoryViewModel.insert(new com.nduyuwilson.thitima.data.entity.Category(name));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void populateFields(Item item) {
         editTextName.setText(item.getName());
         editTextDescription.setText(item.getDescription());
         editTextBuyingPrice.setText(String.valueOf(item.getBuyingPrice()));
         editTextSellingPrice.setText(String.valueOf(item.getSellingPrice()));
         selectedImageUri = item.getImageUri();
+        selectedCategoryId = item.getCategoryId();
         if (!TextUtils.isEmpty(selectedImageUri)) {
             Glide.with(this).load(Uri.parse(selectedImageUri)).placeholder(R.drawable.ic_splash_logo).into(imageViewPreview);
         }
@@ -125,10 +177,11 @@ public class AddItemFragment extends Fragment {
             existingItem.setBuyingPrice(buyingPrice);
             existingItem.setSellingPrice(sellingPrice);
             existingItem.setImageUri(selectedImageUri);
+            existingItem.setCategoryId(selectedCategoryId);
             itemViewModel.update(existingItem);
             Snackbar.make(view, "Item updated", Snackbar.LENGTH_SHORT).show();
         } else {
-            Item item = new Item(name, description, buyingPrice, sellingPrice, selectedImageUri);
+            Item item = new Item(name, description, buyingPrice, sellingPrice, selectedImageUri, selectedCategoryId);
             itemViewModel.insert(item);
             Snackbar.make(view, "Item added to catalogue", Snackbar.LENGTH_SHORT).show();
         }

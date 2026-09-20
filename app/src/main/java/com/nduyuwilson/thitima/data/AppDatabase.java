@@ -82,6 +82,25 @@ public abstract class AppDatabase extends RoomDatabase {
         String uid = AuthManager.getUid(context);
         String targetDbName = (uid != null && !uid.trim().isEmpty()) ? "thitima_db_" + uid.trim() : "thitima_database";
 
+        // If user logged in and has legacy data in 'thitima_database' but targetDbName doesn't exist yet, migrate it!
+        if (uid != null && !uid.trim().isEmpty()) {
+            try {
+                java.io.File targetDbFile = context.getDatabasePath(targetDbName);
+                java.io.File legacyDbFile = context.getDatabasePath("thitima_database");
+                if (!targetDbFile.exists() && legacyDbFile.exists()) {
+                    copyFile(legacyDbFile, targetDbFile);
+                    java.io.File legacyWal = new java.io.File(legacyDbFile.getAbsolutePath() + "-wal");
+                    java.io.File targetWal = new java.io.File(targetDbFile.getAbsolutePath() + "-wal");
+                    if (legacyWal.exists()) copyFile(legacyWal, targetWal);
+                    java.io.File legacyShm = new java.io.File(legacyDbFile.getAbsolutePath() + "-shm");
+                    java.io.File targetShm = new java.io.File(targetDbFile.getAbsolutePath() + "-shm");
+                    if (legacyShm.exists()) copyFile(legacyShm, targetShm);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         if (INSTANCE == null || !targetDbName.equals(currentDbName)) {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null || !targetDbName.equals(currentDbName)) {
@@ -92,11 +111,26 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, targetDbName)
                             .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
+                            .fallbackToDestructiveMigrationOnDowngrade()
                             .build();
                 }
             }
         }
         return INSTANCE;
+    }
+
+    private static void copyFile(java.io.File src, java.io.File dst) throws java.io.IOException {
+        if (dst.getParentFile() != null && !dst.getParentFile().exists()) {
+            dst.getParentFile().mkdirs();
+        }
+        try (java.io.InputStream in = new java.io.FileInputStream(src);
+             java.io.OutputStream out = new java.io.FileOutputStream(dst)) {
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+        }
     }
 
     public static synchronized void resetDatabaseInstance() {

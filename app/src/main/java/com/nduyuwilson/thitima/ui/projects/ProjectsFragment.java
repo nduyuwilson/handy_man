@@ -118,8 +118,10 @@ public class ProjectsFragment extends Fragment {
         for (Project p : allProjects) {
             boolean matchesStatus = currentFilterStatus.equals("ALL") || p.getStatus().equals(currentFilterStatus);
             boolean matchesSearch = currentSearchQuery.isEmpty() || 
-                                   p.getName().toLowerCase().contains(currentSearchQuery.toLowerCase()) || 
-                                   p.getLocation().toLowerCase().contains(currentSearchQuery.toLowerCase());
+                                   (p.getName() != null && p.getName().toLowerCase().contains(currentSearchQuery.toLowerCase())) || 
+                                   (p.getLocation() != null && p.getLocation().toLowerCase().contains(currentSearchQuery.toLowerCase())) ||
+                                   (p.getClientName() != null && p.getClientName().toLowerCase().contains(currentSearchQuery.toLowerCase())) ||
+                                   (p.getClientContact() != null && p.getClientContact().contains(currentSearchQuery));
             
             if (matchesStatus && matchesSearch) {
                 filteredList.add(p);

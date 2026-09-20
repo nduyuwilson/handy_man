@@ -14,6 +14,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.nduyuwilson.thitima.auth.AuthManager;
 import com.nduyuwilson.thitima.auth.LoginActivity;
+import com.nduyuwilson.thitima.util.AppPrefs;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkTrialPeriod() {
-        SharedPreferences prefs = getSharedPreferences("ThitimaPrefs", MODE_PRIVATE);
+        SharedPreferences prefs = AppPrefs.getPreferences(this);
         long trialStart = prefs.getLong("trial_start_date", 0);
         
         if (trialStart == 0) {

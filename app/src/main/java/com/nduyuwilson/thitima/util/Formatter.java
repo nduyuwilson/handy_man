@@ -13,7 +13,7 @@ public class Formatter {
     }
 
     public static String formatPrice(Context context, double amount) {
-        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = AppPrefs.getPreferences(context);
         String currency = prefs.getString("currency_symbol", "Ksh");
         return currency + " " + getDecimalFormat().format(amount);
     }
@@ -23,7 +23,7 @@ public class Formatter {
     }
 
     public static String getCurrencySymbol(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = AppPrefs.getPreferences(context);
         return prefs.getString("currency_symbol", "Ksh");
     }
 }

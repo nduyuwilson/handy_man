@@ -89,6 +89,9 @@
         <action
             android:id="@+id/action_navigation_settings_to_workersFragment"
             app:destination="@id/workersFragment" />
+        <action
+            android:id="@+id/action_navigation_settings_to_adminTenantsFragment"
+            app:destination="@id/adminTenantsFragment" />
     </fragment>
 
     <fragment
@@ -102,4 +105,10 @@
         android:name="com.nduyuwilson.thitima.ui.settings.WorkersFragment"
         android:label="Workers"
         tools:layout="@layout/fragment_workers" />
+
+    <fragment
+        android:id="@+id/adminTenantsFragment"
+        android:name="com.nduyuwilson.thitima.auth.AdminTenantsFragment"
+        android:label="SaaS Admin Portal"
+        tools:layout="@layout/fragment_admin_tenants" />
 </navigation>

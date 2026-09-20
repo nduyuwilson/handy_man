@@ -32,12 +32,14 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.firebase.auth.FirebaseAuth;
 import com.nduyuwilson.thitima.R;
+import com.nduyuwilson.thitima.auth.AdminManager;
 import com.nduyuwilson.thitima.auth.AuthManager;
 import com.nduyuwilson.thitima.auth.LoginActivity;
 import com.nduyuwilson.thitima.data.AppDatabase;
 import com.nduyuwilson.thitima.data.entity.Item;
 import com.nduyuwilson.thitima.data.model.PaymentMethod;
 import com.nduyuwilson.thitima.data.repository.BackupRepository;
+import com.nduyuwilson.thitima.util.AppPrefs;
 import com.nduyuwilson.thitima.viewmodel.ItemViewModel;
 
 import java.io.File;
@@ -80,7 +82,7 @@ public class SettingsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         
-        sharedPreferences = requireActivity().getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        sharedPreferences = AppPrefs.getPreferences(requireContext());
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
         backupRepository = new BackupRepository(requireActivity().getApplication());
 
@@ -140,6 +142,17 @@ public class SettingsFragment extends Fragment {
             tvTenantDevice.setText("Hardware Device Lock: " + devId.substring(0, 8) + "••• (Active)");
         } else {
             tvTenantDevice.setText("Hardware Device Lock: Active");
+        }
+
+        // SaaS Super Admin Portal Access (Only visible to Admin)
+        View cardAdminPortal = view.findViewById(R.id.cardAdminPortal);
+        if (AdminManager.isAdmin(currentUser)) {
+            cardAdminPortal.setVisibility(View.VISIBLE);
+            view.findViewById(R.id.buttonOpenAdminPortal).setOnClickListener(v -> {
+                Navigation.findNavController(view).navigate(R.id.action_navigation_settings_to_adminTenantsFragment);
+            });
+        } else {
+            cardAdminPortal.setVisibility(View.GONE);
         }
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {

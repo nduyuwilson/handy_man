@@ -43,7 +43,7 @@ public class PdfGenerator {
     public static File generateInvoice(Context context, Project project, List<ProjectItem> projectItems, List<LabourActivity> labourActivities, Map<Integer, Item> itemMap, Map<Integer, ItemVariant> variantMap) {
         PdfDocument pdfDocument = new PdfDocument();
         
-        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = AppPrefs.getPreferences(context);
         String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
         String userName = prefs.getString("user_name", "Professional Installer");
         String userNumber = prefs.getString("user_number", "");
@@ -368,7 +368,7 @@ public class PdfGenerator {
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = AppPrefs.getPreferences(context);
         String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
         String userNumber = prefs.getString("user_number", "");
         String currency = Formatter.getCurrencySymbol(context);
@@ -482,7 +482,7 @@ public class PdfGenerator {
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        SharedPreferences prefs = context.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = AppPrefs.getPreferences(context);
         String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
         String userNumber = prefs.getString("user_number", "");
         String currency = Formatter.getCurrencySymbol(context);

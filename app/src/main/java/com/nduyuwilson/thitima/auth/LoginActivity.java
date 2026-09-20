@@ -147,37 +147,58 @@ public class LoginActivity extends AppCompatActivity {
                 .document(uid)
                 .get()
                 .addOnCompleteListener(task -> {
-                    setLoading(false);
                     if (task.isSuccessful() && task.getResult() != null) {
                         com.google.firebase.firestore.DocumentSnapshot doc = task.getResult();
                         
                         // 1. Check Device ID
                         String currentDeviceId = AuthManager.getDeviceId(this);
                         String storedDeviceId = doc.getString("deviceId");
+                        boolean isSuperAdmin = AdminManager.isAdmin(mAuth.getCurrentUser());
 
-                        if (storedDeviceId == null) {
-                            // First time login - link this device
-                            db.collection("users").document(uid).update("deviceId", currentDeviceId);
-                        } else if (!storedDeviceId.equals(currentDeviceId)) {
-                            // Device mismatch
-                            mAuth.signOut();
-                            AuthManager.clearAuthInfo(this);
-                            showError("This account is linked to another device. Please contact support to reset.");
-                            return;
+                        if (!isSuperAdmin) {
+                            if (storedDeviceId == null) {
+                                // Check if this device is already bound to another tenant
+                                db.collection("users")
+                                        .whereEqualTo("deviceId", currentDeviceId)
+                                        .get()
+                                        .addOnCompleteListener(deviceCheckTask -> {
+                                            if (deviceCheckTask.isSuccessful() && deviceCheckTask.getResult() != null && !deviceCheckTask.getResult().isEmpty()) {
+                                                boolean alreadyClaimed = false;
+                                                String otherEmail = "";
+                                                for (com.google.firebase.firestore.DocumentSnapshot otherDoc : deviceCheckTask.getResult().getDocuments()) {
+                                                    if (!otherDoc.getId().equals(uid)) {
+                                                        alreadyClaimed = true;
+                                                        otherEmail = otherDoc.getString("email");
+                                                        break;
+                                                    }
+                                                }
+                                                if (alreadyClaimed) {
+                                                    setLoading(false);
+                                                    mAuth.signOut();
+                                                    AuthManager.clearAuthInfo(this);
+                                                    showError("This device is already locked to another account (" + (otherEmail != null && !otherEmail.isEmpty() ? otherEmail : "active workspace") + "). Contact support to reassign.");
+                                                    return;
+                                                }
+                                            }
+
+                                            // Device is free, bind it to this user
+                                            db.collection("users").document(uid).update("deviceId", currentDeviceId);
+                                            checkSubscriptionAndProceed(doc);
+                                        });
+                                return;
+                            } else if (!storedDeviceId.equals(currentDeviceId)) {
+                                // Device mismatch: this user is locked to a different phone
+                                setLoading(false);
+                                mAuth.signOut();
+                                AuthManager.clearAuthInfo(this);
+                                showError("This account is linked to another device. Please contact support to reset.");
+                                return;
+                            }
                         }
 
-                        // 2. Check Subscription
-                        Boolean isPremium = doc.getBoolean("isPremium");
-                        boolean premium = Boolean.TRUE.equals(isPremium);
-                        AuthManager.saveSubscriptionStatus(this, premium);
-
-                        if (premium) {
-                            schedulePeriodicSyncWorker();
-                            goToMain();
-                        } else {
-                            showError("No active subscription found. Please purchase a plan to access Thitima.");
-                        }
+                        checkSubscriptionAndProceed(doc);
                     } else {
+                        setLoading(false);
                         Log.d("LoginActivity", "verifySubscription: failed", task.getException());
                         // Firestore call failed – apply cached result if available
                         if (AuthManager.isPremiumCached(this)) {
@@ -188,6 +209,22 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     }
                 });
+    }
+
+    private void checkSubscriptionAndProceed(com.google.firebase.firestore.DocumentSnapshot doc) {
+        setLoading(false);
+        Boolean isPremium = doc.getBoolean("isPremium");
+        boolean premium = Boolean.TRUE.equals(isPremium);
+        AuthManager.saveSubscriptionStatus(this, premium);
+
+        if (premium) {
+            // Reset database singleton so clean tenant database is opened
+            com.nduyuwilson.thitima.data.AppDatabase.resetDatabaseInstance();
+            schedulePeriodicSyncWorker();
+            goToMain();
+        } else {
+            showError("No active subscription found. Please purchase a plan to access Thitima.");
+        }
     }
 
     // ---------------------------------------------------------------

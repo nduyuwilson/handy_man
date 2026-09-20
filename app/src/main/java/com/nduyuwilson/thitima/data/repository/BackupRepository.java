@@ -21,6 +21,7 @@ import com.nduyuwilson.thitima.data.entity.WorkerPayment;
 import com.nduyuwilson.thitima.data.model.BackupData;
 import com.nduyuwilson.thitima.data.model.PaymentMethod;
 import com.nduyuwilson.thitima.data.model.SettingsData;
+import com.nduyuwilson.thitima.util.AppPrefs;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -66,7 +67,7 @@ public class BackupRepository {
             data.workers = currentDb.workerDao().getAllWorkersSync();
             data.workerPayments = currentDb.workerPaymentDao().getAllWorkerPaymentsSync();
             
-            SharedPreferences prefs = application.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
+            SharedPreferences prefs = AppPrefs.getPreferences(application);
             SettingsData settings = new SettingsData();
             settings.businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
             settings.userName = prefs.getString("user_name", "");
@@ -207,7 +208,7 @@ public class BackupRepository {
                         
                         // 3. Restore all app settings and preferences
                         if (data.settings != null) {
-                            SharedPreferences.Editor editor = application.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE).edit();
+                            SharedPreferences.Editor editor = AppPrefs.getPreferences(application).edit();
                             
                             // Restore dynamic map entries if present
                             if (data.settings.allPreferences != null) {

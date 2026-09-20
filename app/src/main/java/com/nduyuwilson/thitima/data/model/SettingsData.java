@@ -1,6 +1,7 @@
 package com.nduyuwilson.thitima.data.model;
 
 import java.util.List;
+import java.util.Map;
 
 public class SettingsData {
     public String businessName;
@@ -9,6 +10,7 @@ public class SettingsData {
     public int themeMode;
     public String currencySymbol;
     public List<PaymentMethod> paymentMethods;
+    public Map<String, Object> allPreferences;
 
     public SettingsData() {}
 }

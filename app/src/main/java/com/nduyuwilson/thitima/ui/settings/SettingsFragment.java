@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -33,6 +34,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.auth.AuthManager;
 import com.nduyuwilson.thitima.auth.LoginActivity;
+import com.nduyuwilson.thitima.data.AppDatabase;
 import com.nduyuwilson.thitima.data.entity.Item;
 import com.nduyuwilson.thitima.data.model.PaymentMethod;
 import com.nduyuwilson.thitima.data.repository.BackupRepository;
@@ -51,7 +53,8 @@ public class SettingsFragment extends Fragment {
 
     private SharedPreferences sharedPreferences;
     private TextInputEditText editTextBusinessName, editTextUserName, editTextUserNumber;
-    private MaterialButton buttonEditProfile, buttonSaveProfile, buttonAddPaymentMethod, buttonTemplates, buttonWorkers;
+    private MaterialButton buttonEditProfile, buttonSaveProfile, buttonAddPaymentMethod;
+    private View buttonTemplates, buttonWorkers;
     private RecyclerView recyclerViewPaymentMethods;
     private PaymentMethodAdapter paymentAdapter;
     private List<PaymentMethod> paymentMethods = new ArrayList<>();
@@ -118,18 +121,42 @@ public class SettingsFragment extends Fragment {
         view.findViewById(R.id.buttonBackup).setOnClickListener(v -> performFullBackup());
         view.findViewById(R.id.buttonRestore).setOnClickListener(v -> mGetBackupFile.launch("application/zip"));
 
+        // SaaS Tenant Profile View Binding
+        TextView tvTenantEmail = view.findViewById(R.id.tvTenantAccountEmail);
+        TextView tvTenantDevice = view.findViewById(R.id.tvTenantDeviceId);
+        com.google.android.material.chip.Chip chipPlan = view.findViewById(R.id.chipSubscriptionPlan);
+
+        com.google.firebase.auth.FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null && currentUser.getEmail() != null) {
+            tvTenantEmail.setText("Account: " + currentUser.getEmail());
+        } else {
+            tvTenantEmail.setText("Account: Offline SaaS Tenant");
+        }
+
+        boolean isPremium = AuthManager.isPremiumCached(requireContext());
+        chipPlan.setText(isPremium ? "PRO SAAS" : "TRIAL / FIELD");
+        String devId = AuthManager.getDeviceId(requireContext());
+        if (devId != null && devId.length() > 8) {
+            tvTenantDevice.setText("Hardware Device Lock: " + devId.substring(0, 8) + "••• (Active)");
+        } else {
+            tvTenantDevice.setText("Hardware Device Lock: Active");
+        }
+
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
             new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Logout")
-                    .setMessage("Are you sure you want to logout? You will need an internet connection to sign in again.")
-                    .setPositiveButton("Logout", (dialog, which) -> {
+                    .setTitle("Sign Out / Switch Workspace")
+                    .setMessage("Are you sure you want to sign out of this business workspace? Your local workspace data remains secure.")
+                    .setPositiveButton("Sign Out", (dialog, which) -> {
                         // 1. Sign out from Firebase
                         FirebaseAuth.getInstance().signOut();
                         
                         // 2. Clear local auth cache
                         AuthManager.clearAuthInfo(requireContext());
+
+                        // 3. Reset database singleton for tenant isolation
+                        AppDatabase.resetDatabaseInstance();
                         
-                        // 3. Redirect to LoginActivity
+                        // 4. Redirect to LoginActivity
                         Intent intent = new Intent(requireActivity(), LoginActivity.class);
                         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
@@ -363,6 +390,12 @@ public class SettingsFragment extends Fragment {
                             requireActivity().runOnUiThread(() -> {
                                 Toast.makeText(requireContext(), "Full restoration successful", Toast.LENGTH_LONG).show();
                                 loadProfileData(); // Refresh UI
+                                int restoredTheme = sharedPreferences.getInt("theme_mode", 2);
+                                switch (restoredTheme) {
+                                    case 0: AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO); break;
+                                    case 1: AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES); break;
+                                    case 2: AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM); break;
+                                }
                             });
                         }
 

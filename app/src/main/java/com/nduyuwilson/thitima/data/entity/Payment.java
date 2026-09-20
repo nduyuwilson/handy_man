@@ -17,6 +17,7 @@ public class Payment {
     private long date;
     private String method; // e.g., "Cash", "M-Pesa", "Bank"
     private String reference; // Transaction ID
+    private String mpesaMessage; // Complete raw M-Pesa SMS message for audit/reference
 
     public Payment(int projectId, double amount, String method, String reference) {
         this.projectId = projectId;
@@ -38,4 +39,6 @@ public class Payment {
     public void setMethod(String method) { this.method = method; }
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
+    public String getMpesaMessage() { return mpesaMessage; }
+    public void setMpesaMessage(String mpesaMessage) { this.mpesaMessage = mpesaMessage; }
 }

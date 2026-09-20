@@ -8,6 +8,16 @@ import android.net.Uri;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.nduyuwilson.thitima.data.AppDatabase;
+import com.nduyuwilson.thitima.data.entity.Category;
+import com.nduyuwilson.thitima.data.entity.Item;
+import com.nduyuwilson.thitima.data.entity.ItemVariant;
+import com.nduyuwilson.thitima.data.entity.LabourActivity;
+import com.nduyuwilson.thitima.data.entity.Payment;
+import com.nduyuwilson.thitima.data.entity.Project;
+import com.nduyuwilson.thitima.data.entity.ProjectItem;
+import com.nduyuwilson.thitima.data.entity.RulesTemplate;
+import com.nduyuwilson.thitima.data.entity.Worker;
+import com.nduyuwilson.thitima.data.entity.WorkerPayment;
 import com.nduyuwilson.thitima.data.model.BackupData;
 import com.nduyuwilson.thitima.data.model.PaymentMethod;
 import com.nduyuwilson.thitima.data.model.SettingsData;
@@ -22,38 +32,39 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class BackupRepository {
-    private AppDatabase db;
     private Application application;
 
     public BackupRepository(Application application) {
         this.application = application;
-        this.db = AppDatabase.getDatabase(application);
     }
 
     public Future<File> createFullBackupZip() {
         return AppDatabase.databaseWriteExecutor.submit(() -> {
+            AppDatabase currentDb = AppDatabase.getDatabase(application);
             File backupDir = application.getExternalCacheDir();
             File zipFile = new File(backupDir, "Thitima_Full_Backup.zip");
             
-            // 1. Generate JSON with Settings
+            // 1. Generate JSON with Settings and all Database Tables
             BackupData data = new BackupData();
-            data.projects = db.projectDao().getAllProjectsSync();
-            data.items = db.itemDao().getAllItemsSync();
-            data.itemVariants = db.itemVariantDao().getAllVariantsSync();
-            data.categories = db.categoryDao().getAllCategoriesSync();
-            data.projectItems = db.projectItemDao().getAllProjectItemsSync();
-            data.labourActivities = db.labourActivityDao().getAllActivitiesSync();
-            data.payments = db.paymentDao().getAllPaymentsSync();
-            data.rulesTemplates = db.rulesTemplateDao().getAllTemplatesSync();
-            data.workers = db.workerDao().getAllWorkersSync();
-            data.workerPayments = db.workerPaymentDao().getAllWorkerPaymentsSync();
+            data.projects = currentDb.projectDao().getAllProjectsSync();
+            data.items = currentDb.itemDao().getAllItemsSync();
+            data.itemVariants = currentDb.itemVariantDao().getAllVariantsSync();
+            data.categories = currentDb.categoryDao().getAllCategoriesSync();
+            data.projectItems = currentDb.projectItemDao().getAllProjectItemsSync();
+            data.labourActivities = currentDb.labourActivityDao().getAllActivitiesSync();
+            data.payments = currentDb.paymentDao().getAllPaymentsSync();
+            data.rulesTemplates = currentDb.rulesTemplateDao().getAllTemplatesSync();
+            data.workers = currentDb.workerDao().getAllWorkersSync();
+            data.workerPayments = currentDb.workerPaymentDao().getAllWorkerPaymentsSync();
             
             SharedPreferences prefs = application.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE);
             SettingsData settings = new SettingsData();
@@ -67,12 +78,18 @@ public class BackupRepository {
             String paymentJson = prefs.getString("payment_methods_json", "[]");
             Type listType = new TypeToken<ArrayList<PaymentMethod>>(){}.getType();
             settings.paymentMethods = new Gson().fromJson(paymentJson, listType);
+
+            // Complete backup of all SharedPreferences entries
+            Map<String, ?> allEntries = prefs.getAll();
+            if (allEntries != null) {
+                settings.allPreferences = new HashMap<>(allEntries);
+            }
             
             data.settings = settings;
 
             String json = new Gson().toJson(data);
 
-            // 2. Zip everything
+            // 2. Zip backup.json and all stored media images
             try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)))) {
                 ZipEntry jsonEntry = new ZipEntry("backup.json");
                 zos.putNextEntry(jsonEntry);
@@ -84,7 +101,10 @@ public class BackupRepository {
                 if (files != null) {
                     byte[] buffer = new byte[1024];
                     for (File file : files) {
-                        if (file.isFile() && file.getName().startsWith("IMG_")) {
+                        if (file.isFile() && (file.getName().startsWith("IMG_") 
+                                || file.getName().toLowerCase().endsWith(".jpg") 
+                                || file.getName().toLowerCase().endsWith(".png") 
+                                || file.getName().toLowerCase().endsWith(".jpeg"))) {
                             ZipEntry imgEntry = new ZipEntry("images/" + file.getName());
                             zos.putNextEntry(imgEntry);
                             try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
@@ -104,6 +124,7 @@ public class BackupRepository {
 
     public void restoreFromZip(Context context, Uri uri, RestoreCallback callback) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase currentDb = AppDatabase.getDatabase(application);
             try (InputStream is = context.getContentResolver().openInputStream(uri);
                  ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
                 
@@ -123,12 +144,14 @@ public class BackupRepository {
                         json = sb.toString();
                     } else if (entry.getName().startsWith("images/")) {
                         String fileName = entry.getName().substring(7);
-                        File destFile = new File(filesDir, fileName);
-                        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))) {
-                            byte[] buffer = new byte[1024];
-                            int len;
-                            while ((len = zis.read(buffer)) != -1) {
-                                bos.write(buffer, 0, len);
+                        if (!fileName.isEmpty()) {
+                            File destFile = new File(filesDir, fileName);
+                            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destFile))) {
+                                byte[] buffer = new byte[1024];
+                                int len;
+                                while ((len = zis.read(buffer)) != -1) {
+                                    bos.write(buffer, 0, len);
+                                }
                             }
                         }
                     }
@@ -137,57 +160,87 @@ public class BackupRepository {
 
                 if (json != null) {
                     BackupData data = new Gson().fromJson(json, BackupData.class);
-                    db.runInTransaction(() -> {
-                        db.workerPaymentDao().deleteAll();
-                        db.workerDao().deleteAll();
-                        db.projectItemDao().deleteAll();
-                        db.itemVariantDao().deleteAll();
-                        db.labourActivityDao().deleteAll();
-                        db.paymentDao().deleteAll();
-                        db.rulesTemplateDao().deleteAll();
-                        db.projectDao().deleteAll();
-                        db.itemDao().deleteAll();
+                    currentDb.runInTransaction(() -> {
+                        // 1. Delete child tables first to respect foreign key cascades
+                        currentDb.workerPaymentDao().deleteAll();
+                        currentDb.paymentDao().deleteAll();
+                        currentDb.projectItemDao().deleteAll();
+                        currentDb.labourActivityDao().deleteAll();
+                        currentDb.itemVariantDao().deleteAll();
+                        currentDb.workerDao().deleteAll();
+                        currentDb.projectDao().deleteAll();
+                        currentDb.itemDao().deleteAll();
+                        currentDb.categoryDao().deleteAll();
+                        currentDb.rulesTemplateDao().deleteAll();
 
+                        // 2. Insert parent tables first to satisfy foreign key constraints
                         if (data.categories != null) {
-                            for (var category : data.categories) db.categoryDao().insert(category);
+                            for (Category category : data.categories) currentDb.categoryDao().insert(category);
                         }
                         if (data.items != null) {
-                            for (var item : data.items) db.itemDao().insert(item);
-                        }
-                        if (data.projects != null) {
-                            for (var project : data.projects) db.projectDao().insert(project);
+                            for (Item item : data.items) currentDb.itemDao().insert(item);
                         }
                         if (data.itemVariants != null) {
-                            for (var variant : data.itemVariants) db.itemVariantDao().insert(variant);
+                            for (ItemVariant variant : data.itemVariants) currentDb.itemVariantDao().insert(variant);
                         }
-                        if (data.projectItems != null) {
-                            for (var pItem : data.projectItems) db.projectItemDao().insert(pItem);
-                        }
-                        if (data.labourActivities != null) {
-                            for (var activity : data.labourActivities) db.labourActivityDao().insert(activity);
-                        }
-                        if (data.payments != null) {
-                            for (var payment : data.payments) db.paymentDao().insert(payment);
-                        }
-                        if (data.rulesTemplates != null) {
-                            for (var template : data.rulesTemplates) db.rulesTemplateDao().insert(template);
+                        if (data.projects != null) {
+                            for (Project project : data.projects) currentDb.projectDao().insert(project);
                         }
                         if (data.workers != null) {
-                            for (var worker : data.workers) db.workerDao().insert(worker);
+                            for (Worker worker : data.workers) currentDb.workerDao().insert(worker);
+                        }
+                        if (data.rulesTemplates != null) {
+                            for (RulesTemplate template : data.rulesTemplates) currentDb.rulesTemplateDao().insert(template);
+                        }
+                        if (data.projectItems != null) {
+                            for (ProjectItem pItem : data.projectItems) currentDb.projectItemDao().insert(pItem);
+                        }
+                        if (data.labourActivities != null) {
+                            for (LabourActivity activity : data.labourActivities) currentDb.labourActivityDao().insert(activity);
+                        }
+                        if (data.payments != null) {
+                            for (Payment payment : data.payments) currentDb.paymentDao().insert(payment);
                         }
                         if (data.workerPayments != null) {
-                            for (var wPayment : data.workerPayments) db.workerPaymentDao().insert(wPayment);
+                            for (WorkerPayment wPayment : data.workerPayments) currentDb.workerPaymentDao().insert(wPayment);
                         }
                         
-                        // Restore Settings
+                        // 3. Restore all app settings and preferences
                         if (data.settings != null) {
                             SharedPreferences.Editor editor = application.getSharedPreferences("ThitimaPrefs", Context.MODE_PRIVATE).edit();
-                            editor.putString("business_name", data.settings.businessName);
-                            editor.putString("user_name", data.settings.userName);
-                            editor.putString("user_number", data.settings.userNumber);
-                            editor.putInt("theme_mode", data.settings.themeMode);
-                            editor.putString("currency_symbol", data.settings.currencySymbol);
                             
+                            // Restore dynamic map entries if present
+                            if (data.settings.allPreferences != null) {
+                                for (Map.Entry<String, Object> prefEntry : data.settings.allPreferences.entrySet()) {
+                                    String key = prefEntry.getKey();
+                                    Object val = prefEntry.getValue();
+                                    if (val instanceof String) {
+                                        editor.putString(key, (String) val);
+                                    } else if (val instanceof Boolean) {
+                                        editor.putBoolean(key, (Boolean) val);
+                                    } else if (val instanceof Integer) {
+                                        editor.putInt(key, (Integer) val);
+                                    } else if (val instanceof Long) {
+                                        editor.putLong(key, (Long) val);
+                                    } else if (val instanceof Float) {
+                                        editor.putFloat(key, (Float) val);
+                                    } else if (val instanceof Double) {
+                                        double d = (Double) val;
+                                        if (d == Math.floor(d) && !Double.isInfinite(d)) {
+                                            editor.putInt(key, (int) d);
+                                        } else {
+                                            editor.putFloat(key, (float) d);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Explicit field restoration for guaranteed compatibility
+                            if (data.settings.businessName != null) editor.putString("business_name", data.settings.businessName);
+                            if (data.settings.userName != null) editor.putString("user_name", data.settings.userName);
+                            if (data.settings.userNumber != null) editor.putString("user_number", data.settings.userNumber);
+                            editor.putInt("theme_mode", data.settings.themeMode);
+                            if (data.settings.currencySymbol != null) editor.putString("currency_symbol", data.settings.currencySymbol);
                             if (data.settings.paymentMethods != null) {
                                 editor.putString("payment_methods_json", new Gson().toJson(data.settings.paymentMethods));
                             }

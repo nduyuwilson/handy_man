@@ -31,7 +31,8 @@ public class BackupData {
     public BackupData(List<Project> projects, List<Item> items, List<ItemVariant> itemVariants, 
                       List<ProjectItem> projectItems, List<LabourActivity> labourActivities, 
                       List<RulesTemplate> rulesTemplates, List<Payment> payments, 
-                      List<Worker> workers, List<WorkerPayment> workerPayments, SettingsData settings) {
+                      List<Worker> workers, List<WorkerPayment> workerPayments, 
+                      List<Category> categories, SettingsData settings) {
         this.projects = projects;
         this.items = items;
         this.itemVariants = itemVariants;
@@ -41,6 +42,7 @@ public class BackupData {
         this.payments = payments;
         this.workers = workers;
         this.workerPayments = workerPayments;
+        this.categories = categories;
         this.settings = settings;
     }
 }

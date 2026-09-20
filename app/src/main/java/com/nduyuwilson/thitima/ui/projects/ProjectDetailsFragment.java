@@ -1,6 +1,11 @@
 package com.nduyuwilson.thitima.ui.projects;
 
+import android.Manifest;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
@@ -17,10 +22,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
@@ -29,6 +37,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
@@ -42,12 +51,16 @@ import com.nduyuwilson.thitima.data.entity.ProjectItem;
 import com.nduyuwilson.thitima.data.entity.Worker;
 import com.nduyuwilson.thitima.data.entity.WorkerPayment;
 import com.nduyuwilson.thitima.util.Formatter;
+import com.nduyuwilson.thitima.util.MpesaParser;
 import com.nduyuwilson.thitima.util.PdfGenerator;
 import com.nduyuwilson.thitima.viewmodel.ItemViewModel;
 import com.nduyuwilson.thitima.viewmodel.ProjectViewModel;
 import com.nduyuwilson.thitima.viewmodel.WorkerViewModel;
 
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +73,9 @@ public class ProjectDetailsFragment extends Fragment {
     private int projectId;
 
     // View bindings
-    private TextView tvTitle, tvLocation, tvClient, tvGrandTotalTop, tvMaterialTotalTop, tvLabourTotalTop, tvTotalPaidTop, tvBalanceDueTop, tvWorkerWagesTop;
+    private TextView tvTitle, tvLocation, tvClient, tvStatus, tvClientName, tvClientContact, tvClientAvatar, tvBalanceDueLabel;
+    private TextView tvGrandTotalTop, tvMaterialTotalTop, tvLabourTotalTop, tvTotalPaidTop, tvBalanceDueTop, tvWorkerWagesTop;
+    private View buttonCallClient, buttonSmsClient;
 
     private ProjectItemAdapter itemAdapter;
     private LabourActivityAdapter labourAdapter;
@@ -81,6 +96,20 @@ public class ProjectDetailsFragment extends Fragment {
 
     private Map<Integer, Item> itemMap = new HashMap<>();
     private Map<Integer, ItemVariant> variantMap = new HashMap<>();
+
+    private interface OnSmsSelectedListener {
+        void onSmsSelected(String smsBody);
+    }
+    private OnSmsSelectedListener pendingSmsListener;
+
+    private final ActivityResultLauncher<String> requestSmsPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    showSmsPickerInternal();
+                } else {
+                    Toast.makeText(requireContext(), "SMS permission denied. You can still paste M-Pesa SMS directly.", Toast.LENGTH_LONG).show();
+                }
+            });
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -111,12 +140,41 @@ public class ProjectDetailsFragment extends Fragment {
         tvTitle = view.findViewById(R.id.tvProjectTitle);
         tvLocation = view.findViewById(R.id.tvProjectLocation);
         tvClient = view.findViewById(R.id.tvClientDetails);
+        tvStatus = view.findViewById(R.id.tvProjectStatus);
+        tvClientName = view.findViewById(R.id.tvClientName);
+        tvClientContact = view.findViewById(R.id.tvClientContact);
+        tvClientAvatar = view.findViewById(R.id.tvClientAvatar);
+        tvBalanceDueLabel = view.findViewById(R.id.tvBalanceDueLabel);
         tvGrandTotalTop = view.findViewById(R.id.tvGrandTotalTop);
         tvMaterialTotalTop = view.findViewById(R.id.tvMaterialTotalTop);
         tvLabourTotalTop = view.findViewById(R.id.tvLabourTotalTop);
         tvTotalPaidTop = view.findViewById(R.id.tvTotalPaidTop);
         tvBalanceDueTop = view.findViewById(R.id.tvBalanceDueTop);
         tvWorkerWagesTop = view.findViewById(R.id.tvWorkerWagesTop);
+        buttonCallClient = view.findViewById(R.id.buttonCallClient);
+        buttonSmsClient = view.findViewById(R.id.buttonSmsClient);
+
+        if (buttonCallClient != null) {
+            buttonCallClient.setOnClickListener(v -> {
+                if (currentProject != null && currentProject.getClientContact() != null && !currentProject.getClientContact().isEmpty()) {
+                    Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + currentProject.getClientContact()));
+                    startActivity(dialIntent);
+                } else {
+                    Toast.makeText(requireContext(), "No client contact number available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (buttonSmsClient != null) {
+            buttonSmsClient.setOnClickListener(v -> {
+                if (currentProject != null && currentProject.getClientContact() != null && !currentProject.getClientContact().isEmpty()) {
+                    Intent smsIntent = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + currentProject.getClientContact()));
+                    startActivity(smsIntent);
+                } else {
+                    Toast.makeText(requireContext(), "No client contact number available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
         projectViewModel = new ViewModelProvider(this).get(ProjectViewModel.class);
@@ -137,6 +195,15 @@ public class ProjectDetailsFragment extends Fragment {
         view.findViewById(R.id.buttonAddWorkerWage).setOnClickListener(v -> showAddWorkerPaymentDialog(null));
         view.findViewById(R.id.buttonGenerateInvoice).setOnClickListener(v -> generateAndSharePdf(false));
         view.findViewById(R.id.buttonGenerateLabourInvoice).setOnClickListener(v -> generateAndSharePdf(true));
+
+        View buttonHeaderEdit = view.findViewById(R.id.buttonHeaderEditProject);
+        if (buttonHeaderEdit != null) {
+            buttonHeaderEdit.setOnClickListener(v -> {
+                Bundle bundle = new Bundle();
+                bundle.putInt("projectId", projectId);
+                Navigation.findNavController(view).navigate(R.id.action_projectDetailsFragment_to_addProjectFragment, bundle);
+            });
+        }
 
         requireActivity().addMenuProvider(new MenuProvider() {
             @Override
@@ -181,7 +248,29 @@ public class ProjectDetailsFragment extends Fragment {
                 currentProject = project;
                 tvTitle.setText(project.getName());
                 tvLocation.setText(project.getLocation());
-                tvClient.setText(String.format("%s\n%s", project.getClientName(), project.getClientContact()));
+                if (tvClient != null) {
+                    tvClient.setText(String.format("%s\n%s", project.getClientName(), project.getClientContact()));
+                }
+                if (tvClientName != null) {
+                    tvClientName.setText(project.getClientName());
+                }
+                if (tvClientContact != null) {
+                    tvClientContact.setText(project.getClientContact());
+                }
+                if (tvClientAvatar != null) {
+                    String name = project.getClientName() != null ? project.getClientName().trim() : "";
+                    if (!name.isEmpty()) {
+                        String[] parts = name.split("\\s+");
+                        if (parts.length >= 2 && !parts[0].isEmpty() && !parts[1].isEmpty()) {
+                            tvClientAvatar.setText(("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase());
+                        } else {
+                            tvClientAvatar.setText(name.substring(0, Math.min(2, name.length())).toUpperCase());
+                        }
+                    } else {
+                        tvClientAvatar.setText("CL");
+                    }
+                }
+                updateStatusBadge(project.getStatus());
                 calculateTotals();
             }
         });
@@ -270,17 +359,56 @@ public class ProjectDetailsFragment extends Fragment {
         String labStr = Formatter.formatPrice(requireContext(), currentLabourTotal);
         String grandStr = Formatter.formatPrice(requireContext(), grandTotal);
         String paidStr = Formatter.formatPrice(requireContext(), currentPaidTotal);
-        String balStr = Formatter.formatPrice(requireContext(), grandTotal - currentPaidTotal);
+        double balanceDue = grandTotal - currentPaidTotal;
+        String balStr = Formatter.formatPrice(requireContext(), balanceDue);
         String wageStr = Formatter.formatPrice(requireContext(), currentWorkerWagesTotal);
 
         if (tvMaterialTotalTop != null) tvMaterialTotalTop.setText(matStr);
-//        if (tvMaterialTotalTable != null) tvMaterialTotalTable.setText(matStr);
         if (tvLabourTotalTop != null) tvLabourTotalTop.setText(labStr);
-//        if (tvLabourTotalTable != null) tvLabourTotalTable.setText(labStr);
         if (tvGrandTotalTop != null) tvGrandTotalTop.setText(grandStr);
         if (tvTotalPaidTop != null) tvTotalPaidTop.setText(paidStr);
-        if (tvBalanceDueTop != null) tvBalanceDueTop.setText(balStr);
         if (tvWorkerWagesTop != null) tvWorkerWagesTop.setText(wageStr);
+
+        if (balanceDue <= 0 && grandTotal > 0) {
+            if (tvBalanceDueLabel != null) tvBalanceDueLabel.setText("Payment Status");
+            if (tvBalanceDueTop != null) {
+                tvBalanceDueTop.setText("Fully Settled");
+                tvBalanceDueTop.setTextColor(Color.parseColor("#10B981"));
+            }
+        } else {
+            if (tvBalanceDueLabel != null) tvBalanceDueLabel.setText("Outstanding Balance Due");
+            if (tvBalanceDueTop != null) {
+                tvBalanceDueTop.setText(balStr);
+                tvBalanceDueTop.setTextColor(Color.parseColor("#DC2626"));
+            }
+        }
+    }
+
+    private void updateStatusBadge(String status) {
+        if (tvStatus == null) return;
+        if (status == null || status.trim().isEmpty()) status = "QUOTATION";
+        tvStatus.setText(status.toUpperCase());
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(32);
+
+        switch (status.toUpperCase()) {
+            case "COMPLETED":
+            case "PAID":
+                bg.setColor(Color.parseColor("#DCFCE7"));
+                tvStatus.setTextColor(Color.parseColor("#15803D"));
+                break;
+            case "ONGOING":
+                bg.setColor(Color.parseColor("#E0F2FE"));
+                tvStatus.setTextColor(Color.parseColor("#0369A1"));
+                break;
+            case "QUOTATION":
+            default:
+                bg.setColor(Color.parseColor("#FEF3C7"));
+                tvStatus.setTextColor(Color.parseColor("#B45309"));
+                break;
+        }
+        tvStatus.setBackground(bg);
     }
 
     private void showLabourActivityOptions(LabourActivity activity) {
@@ -454,47 +582,168 @@ public class ProjectDetailsFragment extends Fragment {
     }
 
     private void showAddPaymentDialog(@Nullable Payment existing) {
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext());
-        builder.setTitle(existing == null ? "Log Payment" : "Edit Payment");
-        LinearLayout layout = new LinearLayout(requireContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(48, 24, 48, 24);
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_payment, null);
+        TextInputEditText etAmount = dialogView.findViewById(R.id.etPaymentAmount);
+        AutoCompleteTextView actvMethod = dialogView.findViewById(R.id.actvPaymentMethod);
+        TextInputEditText etReference = dialogView.findViewById(R.id.etPaymentReference);
+        MaterialButton btnPaste = dialogView.findViewById(R.id.btnPasteMpesa);
+        MaterialButton btnPickSms = dialogView.findViewById(R.id.btnPickMpesaSms);
+        LinearLayout layoutPreview = dialogView.findViewById(R.id.layoutMpesaPreview);
+        TextView tvRaw = dialogView.findViewById(R.id.tvMpesaRawMessage);
+        TextView tvClear = dialogView.findViewById(R.id.tvClearMpesa);
 
-        final EditText editAmount = new EditText(requireContext());
-        editAmount.setHint("Amount");
-        editAmount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        if (existing != null) editAmount.setText(String.valueOf(existing.getAmount()));
-        layout.addView(editAmount);
+        // Setup methods dropdown
+        String[] methods = new String[]{"M-Pesa", "Cash", "Bank Transfer", "Cheque", "Other"};
+        ArrayAdapter<String> methodAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, methods);
+        actvMethod.setAdapter(methodAdapter);
 
-        final EditText editMethod = new EditText(requireContext());
-        editMethod.setHint("Method (Cash, M-Pesa, etc.)");
-        if (existing != null) editMethod.setText(existing.getMethod());
-        layout.addView(editMethod);
+        final String[] capturedMpesaMessage = {existing != null && existing.getMpesaMessage() != null ? existing.getMpesaMessage() : ""};
 
-        final EditText editRef = new EditText(requireContext());
-        editRef.setHint("Reference ID");
-        if (existing != null) editRef.setText(existing.getReference());
-        layout.addView(editRef);
-
-        builder.setView(layout);
-        builder.setPositiveButton("Save", (dialog, which) -> {
-            String amtStr = editAmount.getText().toString();
-            if (!amtStr.isEmpty()) {
-                try {
-                    double amt = Double.parseDouble(amtStr);
-                    if (existing == null)
-                        projectViewModel.insertPayment(new Payment(projectId, amt, editMethod.getText().toString(), editRef.getText().toString()));
-                    else {
-                        existing.setAmount(amt);
-                        existing.setMethod(editMethod.getText().toString());
-                        existing.setReference(editRef.getText().toString());
-                        projectViewModel.updatePayment(existing);
-                    }
-                } catch (NumberFormatException ignored) {
-                }
+        if (existing != null) {
+            etAmount.setText(String.format(java.util.Locale.US, "%.2f", existing.getAmount()));
+            actvMethod.setText(existing.getMethod(), false);
+            etReference.setText(existing.getReference());
+            if (!capturedMpesaMessage[0].isEmpty()) {
+                layoutPreview.setVisibility(View.VISIBLE);
+                tvRaw.setText(capturedMpesaMessage[0]);
             }
+        }
+
+        // Helper to apply M-Pesa parsed results
+        OnSmsSelectedListener applyMpesa = smsBody -> {
+            MpesaParser.MpesaResult result = MpesaParser.parse(smsBody);
+            if (result.amount > 0) {
+                etAmount.setText(String.format(java.util.Locale.US, "%.2f", result.amount));
+            }
+            if (!result.transactionCode.isEmpty()) {
+                etReference.setText(result.transactionCode);
+            }
+            actvMethod.setText("M-Pesa", false);
+            capturedMpesaMessage[0] = smsBody;
+            layoutPreview.setVisibility(View.VISIBLE);
+            tvRaw.setText(smsBody);
+            Toast.makeText(requireContext(), "M-Pesa details extracted successfully!", Toast.LENGTH_SHORT).show();
+        };
+
+        btnPaste.setOnClickListener(v -> pasteMpesaSms(applyMpesa));
+        btnPickSms.setOnClickListener(v -> openMpesaSmsPicker(applyMpesa));
+
+        tvClear.setOnClickListener(v -> {
+            capturedMpesaMessage[0] = "";
+            layoutPreview.setVisibility(View.GONE);
         });
-        builder.setNegativeButton("Cancel", null).show();
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(existing == null ? "Log Payment" : "Edit Payment")
+                .setView(dialogView)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String amtStr = etAmount.getText() != null ? etAmount.getText().toString().trim() : "";
+                    String method = actvMethod.getText().toString().trim();
+                    String ref = etReference.getText() != null ? etReference.getText().toString().trim() : "";
+
+                    if (!amtStr.isEmpty()) {
+                        try {
+                            double amt = Double.parseDouble(amtStr);
+                            if (existing == null) {
+                                Payment p = new Payment(projectId, amt, method, ref);
+                                p.setMpesaMessage(capturedMpesaMessage[0]);
+                                projectViewModel.insertPayment(p);
+                            } else {
+                                existing.setAmount(amt);
+                                existing.setMethod(method);
+                                existing.setReference(ref);
+                                existing.setMpesaMessage(capturedMpesaMessage[0]);
+                                projectViewModel.updatePayment(existing);
+                            }
+                        } catch (NumberFormatException ignored) {}
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void openMpesaSmsPicker(OnSmsSelectedListener listener) {
+        this.pendingSmsListener = listener;
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
+            showSmsPickerInternal();
+        } else {
+            requestSmsPermissionLauncher.launch(Manifest.permission.READ_SMS);
+        }
+    }
+
+    private void showSmsPickerInternal() {
+        List<String> mpesaMessages = new ArrayList<>();
+        try {
+            Uri smsUri = Uri.parse("content://sms/inbox");
+            Cursor cursor = requireContext().getContentResolver().query(
+                    smsUri,
+                    new String[]{"address", "body", "date"},
+                    "body LIKE '%Confirmed%' OR address LIKE '%MPESA%'",
+                    null,
+                    "date DESC LIMIT 25"
+            );
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    String body = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+                    if (body != null && (body.contains("Confirmed") || body.contains("received"))) {
+                        mpesaMessages.add(body);
+                    }
+                }
+                cursor.close();
+            }
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Could not read SMS: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+
+        if (mpesaMessages.isEmpty()) {
+            Toast.makeText(requireContext(), "No M-Pesa confirmation SMS found in inbox. Try pasting directly.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String[] displayItems = new String[mpesaMessages.size()];
+        for (int i = 0; i < mpesaMessages.size(); i++) {
+            String msg = mpesaMessages.get(i);
+            displayItems[i] = msg.length() > 85 ? msg.substring(0, 85) + "..." : msg;
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select M-Pesa Payment SMS")
+                .setItems(displayItems, (dialog, which) -> {
+                    if (pendingSmsListener != null) {
+                        pendingSmsListener.onSmsSelected(mpesaMessages.get(which));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void pasteMpesaSms(OnSmsSelectedListener listener) {
+        ClipboardManager clipboard = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        String clipText = "";
+        if (clipboard != null && clipboard.hasPrimaryClip() && clipboard.getPrimaryClip().getItemCount() > 0) {
+            CharSequence text = clipboard.getPrimaryClip().getItemAt(0).getText();
+            if (text != null) clipText = text.toString().trim();
+        }
+
+        if (!clipText.isEmpty() && (clipText.contains("Confirmed") || clipText.contains("received") || clipText.contains("Ksh"))) {
+            listener.onSmsSelected(clipText);
+        } else {
+            View pasteView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_paste_mpesa, null);
+            TextInputEditText etPaste = pasteView.findViewById(R.id.etPasteSmsText);
+            if (!clipText.isEmpty()) etPaste.setText(clipText);
+
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Paste M-Pesa Confirmation SMS")
+                    .setView(pasteView)
+                    .setPositiveButton("Parse & Apply", (d, w) -> {
+                        String input = etPaste.getText() != null ? etPaste.getText().toString().trim() : "";
+                        if (!input.isEmpty()) {
+                            listener.onSmsSelected(input);
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }
     }
 
     private void showProjectItemOptions(ProjectItem pi) {

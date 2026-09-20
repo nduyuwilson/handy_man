@@ -29,10 +29,12 @@ import com.nduyuwilson.thitima.data.entity.RulesTemplate;
 import com.nduyuwilson.thitima.data.entity.Worker;
 import com.nduyuwilson.thitima.data.entity.WorkerPayment;
 
+import com.nduyuwilson.thitima.auth.AuthManager;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities = {Item.class, Category.class, Project.class, ProjectItem.class, ItemVariant.class, LabourActivity.class, RulesTemplate.class, Payment.class, Worker.class, WorkerPayment.class}, version = 7, exportSchema = false)
+@Database(entities = {Item.class, Category.class, Project.class, ProjectItem.class, ItemVariant.class, LabourActivity.class, RulesTemplate.class, Payment.class, Worker.class, WorkerPayment.class}, version = 8, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ItemDao itemDao();
@@ -59,22 +61,49 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration from version 7 to 8:
+     * Add 'mpesaMessage' column to 'payments' table.
+     */
+    static final Migration MIGRATION_7_8 = new Migration(7, 8) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `payments` ADD COLUMN `mpesaMessage` TEXT");
+        }
+    };
+
     private static volatile AppDatabase INSTANCE;
+    private static volatile String currentDbName = null;
     private static final int NUMBER_OF_THREADS = 4;
     public static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
     public static AppDatabase getDatabase(final Context context) {
-        if (INSTANCE == null) {
+        String uid = AuthManager.getUid(context);
+        String targetDbName = (uid != null && !uid.trim().isEmpty()) ? "thitima_db_" + uid.trim() : "thitima_database";
+
+        if (INSTANCE == null || !targetDbName.equals(currentDbName)) {
             synchronized (AppDatabase.class) {
-                if (INSTANCE == null) {
+                if (INSTANCE == null || !targetDbName.equals(currentDbName)) {
+                    if (INSTANCE != null && INSTANCE.isOpen()) {
+                        INSTANCE.close();
+                    }
+                    currentDbName = targetDbName;
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                                    AppDatabase.class, "thitima_database")
-                            .addMigrations(MIGRATION_6_7)
+                                    AppDatabase.class, targetDbName)
+                            .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
                             .build();
                 }
             }
         }
         return INSTANCE;
+    }
+
+    public static synchronized void resetDatabaseInstance() {
+        if (INSTANCE != null && INSTANCE.isOpen()) {
+            INSTANCE.close();
+        }
+        INSTANCE = null;
+        currentDbName = null;
     }
 }

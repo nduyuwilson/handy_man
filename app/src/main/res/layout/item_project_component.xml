@@ -1,51 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="8dp"
     android:layout_marginVertical="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="1dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0.5dp"
+    app:strokeColor="?attr/colorOutline"
+    app:strokeWidth="1dp"
+    android:backgroundTint="?attr/colorSurface">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp">
 
-        <TextView
-            android:id="@+id/textViewComponentName"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Component Name"
-            android:textAppearance="?attr/textAppearanceTitleSmall"
-            app:layout_constraintEnd_toStartOf="@id/textViewComponentTotal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/textViewComponentDetails"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Qty: 2 x $50.00"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="?android:attr/textColorSecondary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/textViewComponentTotal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textViewComponentName" />
+            <TextView
+                android:id="@+id/textViewComponentName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Component Name"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textStyle="bold"
+                tools:text="1.5mm Twin &amp; Earth Cable" />
+
+            <TextView
+                android:id="@+id/textViewComponentDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Qty: 2 x KES 4,500.00"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?android:attr/textColorSecondary"
+                tools:text="Qty: 2 x KES 4,500.00" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/textViewComponentTotal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="$100.00"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/shape_pill_badge"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="5dp"
+            android:text="KES 9,000.00"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="?attr/colorPrimary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:textStyle="bold"
+            tools:text="KES 9,000.00" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
@@ -23,6 +24,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.nduyuwilson.thitima.R;
 import com.nduyuwilson.thitima.data.entity.Project;
 import com.nduyuwilson.thitima.data.entity.RulesTemplate;
+import com.nduyuwilson.thitima.util.Formatter;
 import com.nduyuwilson.thitima.viewmodel.ProjectViewModel;
 import com.nduyuwilson.thitima.viewmodel.RulesTemplateViewModel;
 
@@ -32,7 +34,7 @@ public class AddProjectFragment extends Fragment {
 
     private TextInputEditText editTextName, editTextLocation, editTextDescription, editTextClientName, editTextClientContact, editTextLabourCost, editTextLabourPercent, editTextRules;
     private MaterialAutoCompleteTextView autoCompleteStatus;
-    private TextInputLayout textInputLayoutRules;
+    private TextInputLayout textInputLayoutRules, layoutLabourCost;
     private ProjectViewModel projectViewModel;
     private RulesTemplateViewModel rulesTemplateViewModel;
     private int projectId = -1;
@@ -57,6 +59,11 @@ public class AddProjectFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbarAddProject);
+        if (toolbar != null) {
+            toolbar.setNavigationOnClickListener(v -> Navigation.findNavController(v).navigateUp());
+        }
+
         projectViewModel = new ViewModelProvider(this).get(ProjectViewModel.class);
         rulesTemplateViewModel = new ViewModelProvider(this).get(RulesTemplateViewModel.class);
 
@@ -69,19 +76,34 @@ public class AddProjectFragment extends Fragment {
         editTextLabourPercent = view.findViewById(R.id.editTextLabourPercent);
         editTextRules = view.findViewById(R.id.editTextRules);
         textInputLayoutRules = view.findViewById(R.id.textInputLayoutRules);
+        layoutLabourCost = view.findViewById(R.id.layoutLabourCost);
         autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
+
+        String currency = Formatter.getCurrencySymbol(requireContext());
+        if (layoutLabourCost != null) {
+            layoutLabourCost.setPrefixText(currency + " ");
+        }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, statuses);
         autoCompleteStatus.setAdapter(adapter);
         autoCompleteStatus.setText(statuses[0], false);
 
-        textInputLayoutRules.setEndIconOnClickListener(v -> showTemplateSelectionDialog());
+        View buttonPickTemplate = view.findViewById(R.id.buttonPickTemplate);
+        if (buttonPickTemplate != null) {
+            buttonPickTemplate.setOnClickListener(v -> showTemplateSelectionDialog());
+        }
+        if (textInputLayoutRules != null) {
+            textInputLayoutRules.setEndIconOnClickListener(v -> showTemplateSelectionDialog());
+        }
 
         Button buttonSave = view.findViewById(R.id.buttonSaveProject);
         TextView textViewHeader = view.findViewById(R.id.textViewHeader);
+        TextView textViewSubheader = view.findViewById(R.id.textViewSubheader);
 
         if (projectId != -1) {
-            textViewHeader.setText("Edit Project Details");
+            if (toolbar != null) toolbar.setTitle("Edit Project");
+            if (textViewHeader != null) textViewHeader.setText("Edit Project Details");
+            if (textViewSubheader != null) textViewSubheader.setText("Update project information, pricing terms, and status.");
             buttonSave.setText("Update Project");
             projectViewModel.getProjectById(projectId).observe(getViewLifecycleOwner(), project -> {
                 if (project != null) {
@@ -143,8 +165,15 @@ public class AddProjectFragment extends Fragment {
         String rules = editTextRules.getText().toString().trim();
         String status = autoCompleteStatus.getText().toString();
 
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(location) || TextUtils.isEmpty(clientName)) {
-            Snackbar.make(view, "Please fill in all required fields", Snackbar.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(name)) {
+            editTextName.setError("Project name is required");
+            editTextName.requestFocus();
+            return;
+        }
+
+        if (TextUtils.isEmpty(clientName)) {
+            editTextClientName.setError("Client name is required");
+            editTextClientName.requestFocus();
             return;
         }
 

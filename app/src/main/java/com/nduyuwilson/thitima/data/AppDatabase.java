@@ -34,7 +34,7 @@ import com.nduyuwilson.thitima.auth.AuthManager;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities = {Item.class, Category.class, Project.class, ProjectItem.class, ItemVariant.class, LabourActivity.class, RulesTemplate.class, Payment.class, Worker.class, WorkerPayment.class}, version = 8, exportSchema = false)
+@Database(entities = {Item.class, Category.class, Project.class, ProjectItem.class, ItemVariant.class, LabourActivity.class, RulesTemplate.class, Payment.class, Worker.class, WorkerPayment.class}, version = 9, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ItemDao itemDao();
@@ -72,6 +72,17 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration from version 8 to 9:
+     * Add 'includeVat' column to 'projects' table.
+     */
+    static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `projects` ADD COLUMN `includeVat` INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
     private static volatile AppDatabase INSTANCE;
     private static volatile String currentDbName = null;
     private static final int NUMBER_OF_THREADS = 4;
@@ -91,7 +102,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     currentDbName = targetDbName;
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, targetDbName)
-                            .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
+                            .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                             .fallbackToDestructiveMigrationOnDowngrade()
                             .build();
                 }

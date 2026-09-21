@@ -38,7 +38,8 @@ public class ProjectAdapter extends ListAdapter<Project, ProjectAdapter.ProjectV
             return oldItem.getName().equals(newItem.getName()) &&
                     oldItem.getLocation().equals(newItem.getLocation()) &&
                     oldItem.getClientName().equals(newItem.getClientName()) &&
-                    oldItem.getStatus().equals(newItem.getStatus());
+                    oldItem.getStatus().equals(newItem.getStatus()) &&
+                    oldItem.isIncludeVat() == newItem.isIncludeVat();
         }
     };
 

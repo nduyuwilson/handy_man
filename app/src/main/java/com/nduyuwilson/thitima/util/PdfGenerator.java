@@ -59,6 +59,7 @@ public class PdfGenerator {
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber[0]).create();
         final PdfDocument.Page[] currentPage = {pdfDocument.startPage(pageInfo)};
         final Canvas[] canvas = {currentPage[0].getCanvas()};
+        canvas[0].drawColor(Color.WHITE);
         final int[] y = {110};
 
         drawHeader(context, canvas[0], businessName, isLabourOnly);
@@ -187,7 +188,6 @@ public class PdfGenerator {
         y[0] += 10;
         canvas[0].drawLine(40, y[0], 550, y[0], paint);
         y[0] += 30;
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         if (!isLabourOnly) {
             canvas[0].drawText("Material Total:", 300, y[0], paint);
             canvas[0].drawText(Formatter.formatNumber(materialTotal), 500, y[0], paint);
@@ -195,11 +195,32 @@ public class PdfGenerator {
         }
         canvas[0].drawText("Labour Total:", 300, y[0], paint);
         canvas[0].drawText(Formatter.formatNumber(labourTotal), 500, y[0], paint);
-        y[0] += 30;
-        paint.setTextSize(16);
-        paint.setColor(Color.rgb(25, 118, 210));
-        canvas[0].drawText("GRAND TOTAL:", 300, y[0], paint);
-        canvas[0].drawText(currency + " " + Formatter.formatNumber(materialTotal + labourTotal), 440, y[0], paint);
+        y[0] += 20;
+
+        double subtotal = materialTotal + labourTotal;
+        if (project.isIncludeVat()) {
+            double vatAmount = subtotal * 0.16;
+            double grandTotal = subtotal + vatAmount;
+
+            canvas[0].drawText("Subtotal:", 300, y[0], paint);
+            canvas[0].drawText(Formatter.formatNumber(subtotal), 500, y[0], paint);
+            y[0] += 20;
+
+            canvas[0].drawText("VAT (16%):", 300, y[0], paint);
+            canvas[0].drawText(Formatter.formatNumber(vatAmount), 500, y[0], paint);
+            y[0] += 30;
+
+            paint.setTextSize(15);
+            paint.setColor(Color.rgb(25, 118, 210));
+            canvas[0].drawText("TOTAL (INCL. 16% VAT):", 240, y[0], paint);
+            canvas[0].drawText(currency + " " + Formatter.formatNumber(grandTotal), 440, y[0], paint);
+        } else {
+            y[0] += 10;
+            paint.setTextSize(16);
+            paint.setColor(Color.rgb(25, 118, 210));
+            canvas[0].drawText("GRAND TOTAL:", 300, y[0], paint);
+            canvas[0].drawText(currency + " " + Formatter.formatNumber(subtotal), 440, y[0], paint);
+        }
 
         if (paymentMethods != null && !paymentMethods.isEmpty()) {
             if (y[0] > CONTENT_END_LIMIT - 60) {
@@ -367,6 +388,7 @@ public class PdfGenerator {
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
+        canvas.drawColor(Color.WHITE);
 
         SharedPreferences prefs = AppPrefs.getPreferences(context);
         String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
@@ -481,6 +503,7 @@ public class PdfGenerator {
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create();
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
+        canvas.drawColor(Color.WHITE);
 
         SharedPreferences prefs = AppPrefs.getPreferences(context);
         String businessName = prefs.getString("business_name", "THITIMA ELECTRICALS");
@@ -524,10 +547,26 @@ public class PdfGenerator {
         canvas.drawText("Labour Activity", x + 300, y, paint);
         canvas.drawText(Formatter.formatNumber(activity.getCost()), x + 420, y, paint);
 
-        y += 60;
-        paint.setTextSize(16);
-        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        canvas.drawText("TOTAL AMOUNT: " + currency + " " + Formatter.formatNumber(activity.getCost()), x, y, paint);
+        if (project != null && project.isIncludeVat()) {
+            double cost = activity.getCost();
+            double vat = cost * 0.16;
+            double totalWithVat = cost + vat;
+
+            y += 40;
+            paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            canvas.drawText("Subtotal: " + currency + " " + Formatter.formatNumber(cost), x, y, paint);
+            y += 20;
+            canvas.drawText("VAT (16%): " + currency + " " + Formatter.formatNumber(vat), x, y, paint);
+            y += 30;
+            paint.setTextSize(15);
+            paint.setColor(Color.rgb(25, 118, 210));
+            canvas.drawText("TOTAL AMOUNT (INCL. 16% VAT): " + currency + " " + Formatter.formatNumber(totalWithVat), x, y, paint);
+        } else {
+            y += 60;
+            paint.setTextSize(16);
+            paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            canvas.drawText("TOTAL AMOUNT: " + currency + " " + Formatter.formatNumber(activity.getCost()), x, y, paint);
+        }
 
         pdfDocument.finishPage(page);
         File filePath = createPdfFile(context, "Labour_Activity", project, activity != null ? activity.getName() : null);
@@ -643,6 +682,7 @@ public class PdfGenerator {
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber[0]).create();
         currentPage[0] = pdfDocument.startPage(pageInfo);
         Canvas canvas = currentPage[0].getCanvas();
+        canvas.drawColor(Color.WHITE);
         drawHeader(context, canvas, businessName, isLabourOnly);
         drawWatermark(canvas, businessName, userNumber);
         drawFooter(canvas, businessName, pageNumber[0]);
@@ -669,24 +709,21 @@ public class PdfGenerator {
     private static File createPdfFile(Context context, String prefix, Project project, String extra) {
         StringBuilder sb = new StringBuilder(prefix);
         if (project != null) {
+            sb.append("_").append(project.getId());
             String projName = sanitizeFileName(project.getName());
             if (!projName.isEmpty()) {
+                if (projName.length() > 20) projName = projName.substring(0, 20);
                 sb.append("_").append(projName);
             }
-            String client = sanitizeFileName(project.getClientName());
-            if (!client.isEmpty()) {
-                sb.append("_").append(client);
-            }
-        }
-        if (extra != null && !extra.trim().isEmpty()) {
+        } else if (extra != null && !extra.trim().isEmpty()) {
             String sanitizedExtra = sanitizeFileName(extra);
             if (!sanitizedExtra.isEmpty()) {
                 sb.append("_").append(sanitizedExtra);
             }
         }
-        String dateStr = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date());
-        sb.append("_").append(dateStr).append(".pdf");
+        sb.append(".pdf");
 
-        return new File(context.getExternalCacheDir(), sb.toString());
+        File cacheDir = context.getExternalCacheDir() != null ? context.getExternalCacheDir() : context.getCacheDir();
+        return new File(cacheDir, sb.toString());
     }
 }

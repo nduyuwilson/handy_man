@@ -151,6 +151,7 @@
                             tools:text="KES 450,000.00" />
 
                         <TextView
+                            android:id="@+id/tvGrandTotalLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
@@ -218,6 +219,67 @@
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textStyle="bold"
                                 tools:text="KES 130,000" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- VAT Metric Row (Visible only when includeVat is true) -->
+                    <LinearLayout
+                        android:id="@+id/layoutVatRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Subtotal (Excl. VAT)"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:textColor="?android:attr/textColorSecondary" />
+
+                            <TextView
+                                android:id="@+id/tvSubtotalTop"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="KES 0.00"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textStyle="bold"
+                                tools:text="KES 450,000" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="VAT (16%)"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:textColor="?android:attr/textColorSecondary" />
+
+                            <TextView
+                                android:id="@+id/tvVatTotalTop"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="KES 0.00"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textColor="?attr/colorPrimary"
+                                android:textStyle="bold"
+                                tools:text="KES 72,000" />
                         </LinearLayout>
                     </LinearLayout>
 

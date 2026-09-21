@@ -1,6 +1,8 @@
 package com.nduyuwilson.thitima.ui.projects;
 
 import android.Manifest;
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -74,7 +76,9 @@ public class ProjectDetailsFragment extends Fragment {
 
     // View bindings
     private TextView tvTitle, tvLocation, tvClient, tvStatus, tvClientName, tvClientContact, tvClientAvatar, tvBalanceDueLabel;
-    private TextView tvGrandTotalTop, tvMaterialTotalTop, tvLabourTotalTop, tvTotalPaidTop, tvBalanceDueTop, tvWorkerWagesTop;
+    private TextView tvGrandTotalTop, tvGrandTotalLabel, tvMaterialTotalTop, tvLabourTotalTop, tvTotalPaidTop, tvBalanceDueTop, tvWorkerWagesTop;
+    private TextView tvSubtotalTop, tvVatTotalTop;
+    private View layoutVatRow;
     private View buttonCallClient, buttonSmsClient;
 
     private ProjectItemAdapter itemAdapter;
@@ -146,6 +150,10 @@ public class ProjectDetailsFragment extends Fragment {
         tvClientAvatar = view.findViewById(R.id.tvClientAvatar);
         tvBalanceDueLabel = view.findViewById(R.id.tvBalanceDueLabel);
         tvGrandTotalTop = view.findViewById(R.id.tvGrandTotalTop);
+        tvGrandTotalLabel = view.findViewById(R.id.tvGrandTotalLabel);
+        tvSubtotalTop = view.findViewById(R.id.tvSubtotalTop);
+        tvVatTotalTop = view.findViewById(R.id.tvVatTotalTop);
+        layoutVatRow = view.findViewById(R.id.layoutVatRow);
         tvMaterialTotalTop = view.findViewById(R.id.tvMaterialTotalTop);
         tvLabourTotalTop = view.findViewById(R.id.tvLabourTotalTop);
         tvTotalPaidTop = view.findViewById(R.id.tvTotalPaidTop);
@@ -341,7 +349,21 @@ public class ProjectDetailsFragment extends Fragment {
         }
 
         currentLabourTotal = baseLabour + specificLabourTotal;
-        double grandTotal = currentMaterialTotal + currentLabourTotal;
+        double subtotal = currentMaterialTotal + currentLabourTotal;
+        double vatAmount = 0;
+        double grandTotal = subtotal;
+
+        if (currentProject != null && currentProject.isIncludeVat()) {
+            vatAmount = subtotal * 0.16;
+            grandTotal = subtotal + vatAmount;
+            if (layoutVatRow != null) layoutVatRow.setVisibility(View.VISIBLE);
+            if (tvSubtotalTop != null) tvSubtotalTop.setText(Formatter.formatPrice(requireContext(), subtotal));
+            if (tvVatTotalTop != null) tvVatTotalTop.setText(Formatter.formatPrice(requireContext(), vatAmount));
+            if (tvGrandTotalLabel != null) tvGrandTotalLabel.setText("Total Quote (Incl. 16% VAT)");
+        } else {
+            if (layoutVatRow != null) layoutVatRow.setVisibility(View.GONE);
+            if (tvGrandTotalLabel != null) tvGrandTotalLabel.setText("Total Quote");
+        }
 
         currentPaidTotal = 0;
         if (currentPayments != null) {
@@ -425,16 +447,11 @@ public class ProjectDetailsFragment extends Fragment {
         Toast.makeText(requireContext(), "Generating Labour Invoice...", Toast.LENGTH_SHORT).show();
 
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            File file = PdfGenerator.generateLabourActivityInvoice(requireContext(), currentProject, activity);
+            File pdfFile = PdfGenerator.generateLabourActivityInvoice(requireContext(), currentProject, activity);
             requireActivity().runOnUiThread(() -> {
-                if (file != null) {
-                    Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.setType("application/pdf");
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    intent.putExtra(Intent.EXTRA_STREAM, uri);
-                    startActivity(Intent.createChooser(intent, "Share Labour Invoice"));
-                } else {
+                if (pdfFile != null && isAdded()) {
+                    sharePdfDirectly(pdfFile, "Labour Invoice");
+                } else if (isAdded()) {
                     Toast.makeText(requireContext(), "Failed to generate PDF", Toast.LENGTH_SHORT).show();
                 }
             });
@@ -565,16 +582,11 @@ public class ProjectDetailsFragment extends Fragment {
         Toast.makeText(requireContext(), "Generating Receipt...", Toast.LENGTH_SHORT).show();
 
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            File file = PdfGenerator.generateReceipt(requireContext(), currentProject, p);
+            File pdfFile = PdfGenerator.generateReceipt(requireContext(), currentProject, p);
             requireActivity().runOnUiThread(() -> {
-                if (file != null) {
-                    Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.setType("application/pdf");
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    intent.putExtra(Intent.EXTRA_STREAM, uri);
-                    startActivity(Intent.createChooser(intent, "Share Receipt"));
-                } else {
+                if (pdfFile != null && isAdded()) {
+                    sharePdfDirectly(pdfFile, "Official Receipt #" + p.getId());
+                } else if (isAdded()) {
                     Toast.makeText(requireContext(), "Failed to generate PDF", Toast.LENGTH_SHORT).show();
                 }
             });
@@ -774,26 +786,39 @@ public class ProjectDetailsFragment extends Fragment {
 
     private void generateAndSharePdf(boolean labourOnly) {
         if (currentProject == null) return;
-        Toast.makeText(requireContext(), "Generating PDF...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Generating " + (labourOnly ? "Labour Invoice" : "Quotation") + "...", Toast.LENGTH_SHORT).show();
 
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            File file = PdfGenerator.generateInvoice(requireContext(), currentProject,
+            File pdfFile = PdfGenerator.generateInvoice(requireContext(), currentProject,
                     labourOnly ? null : currentProjectItems,
                     currentLabourActivities,
                     itemMap, variantMap);
 
             requireActivity().runOnUiThread(() -> {
-                if (file != null) {
-                    Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", file);
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.setType("application/pdf");
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    intent.putExtra(Intent.EXTRA_STREAM, uri);
-                    startActivity(Intent.createChooser(intent, "Share PDF"));
-                } else {
+                if (pdfFile != null && isAdded()) {
+                    sharePdfDirectly(pdfFile, labourOnly ? "Labour Invoice" : "Quotation");
+                } else if (isAdded()) {
                     Toast.makeText(requireContext(), "Failed to generate PDF", Toast.LENGTH_SHORT).show();
                 }
             });
         });
+    }
+
+    private void sharePdfDirectly(File pdfFile, String title) {
+        if (pdfFile == null || !pdfFile.exists()) {
+            Toast.makeText(requireContext(), "PDF file could not be found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Uri uri = FileProvider.getUriForFile(requireContext(), "com.nduyuwilson.thitima.fileprovider", pdfFile);
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("application/pdf");
+        intent.putExtra(Intent.EXTRA_STREAM, uri);
+        ClipData clipData = new ClipData(
+                new ClipDescription(pdfFile.getName(), new String[]{"application/pdf"}),
+                new ClipData.Item(uri)
+        );
+        intent.setClipData(clipData);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(Intent.createChooser(intent, "Share " + title));
     }
 }

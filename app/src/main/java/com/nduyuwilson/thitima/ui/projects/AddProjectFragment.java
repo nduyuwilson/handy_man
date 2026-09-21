@@ -17,6 +17,7 @@ import androidx.navigation.Navigation;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputLayout;
@@ -34,6 +35,7 @@ public class AddProjectFragment extends Fragment {
 
     private TextInputEditText editTextName, editTextLocation, editTextDescription, editTextClientName, editTextClientContact, editTextLabourCost, editTextLabourPercent, editTextRules;
     private MaterialAutoCompleteTextView autoCompleteStatus;
+    private MaterialSwitch switchIncludeVat;
     private TextInputLayout textInputLayoutRules, layoutLabourCost;
     private ProjectViewModel projectViewModel;
     private RulesTemplateViewModel rulesTemplateViewModel;
@@ -78,6 +80,7 @@ public class AddProjectFragment extends Fragment {
         textInputLayoutRules = view.findViewById(R.id.textInputLayoutRules);
         layoutLabourCost = view.findViewById(R.id.layoutLabourCost);
         autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
+        switchIncludeVat = view.findViewById(R.id.switchIncludeVat);
 
         String currency = Formatter.getCurrencySymbol(requireContext());
         if (layoutLabourCost != null) {
@@ -152,6 +155,9 @@ public class AddProjectFragment extends Fragment {
         editTextLabourPercent.setText(String.valueOf(project.getLabourPercentage()));
         editTextRules.setText(project.getRulesOfEngagement());
         autoCompleteStatus.setText(project.getStatus(), false);
+        if (switchIncludeVat != null) {
+            switchIncludeVat.setChecked(project.isIncludeVat());
+        }
     }
 
     private void saveProject(View view) {
@@ -164,6 +170,7 @@ public class AddProjectFragment extends Fragment {
         String labourPercentStr = editTextLabourPercent.getText().toString().trim();
         String rules = editTextRules.getText().toString().trim();
         String status = autoCompleteStatus.getText().toString();
+        boolean includeVat = switchIncludeVat != null && switchIncludeVat.isChecked();
 
         if (TextUtils.isEmpty(name)) {
             editTextName.setError("Project name is required");
@@ -197,6 +204,7 @@ public class AddProjectFragment extends Fragment {
             existingProject.setLabourPercentage(labourPercent);
             existingProject.setRulesOfEngagement(rules);
             existingProject.setStatus(status);
+            existingProject.setIncludeVat(includeVat);
             projectViewModel.update(existingProject);
             Snackbar.make(view, "Project updated successfully", Snackbar.LENGTH_SHORT).show();
         } else {
@@ -205,6 +213,7 @@ public class AddProjectFragment extends Fragment {
             project.setLabourPercentage(labourPercent);
             project.setRulesOfEngagement(rules);
             project.setStatus(status);
+            project.setIncludeVat(includeVat);
             projectViewModel.insert(project);
             Snackbar.make(view, "Project created successfully", Snackbar.LENGTH_SHORT).show();
         }

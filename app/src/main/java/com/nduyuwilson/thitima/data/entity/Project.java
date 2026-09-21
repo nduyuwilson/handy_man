@@ -17,6 +17,7 @@ public class Project {
     private String rulesOfEngagement;
     private long createdAt;
     private String status; // New field: QUOTATION, ONGOING, COMPLETED, PAID
+    private boolean includeVat;
 
     public Project(String name, String location, String description, String clientName, String clientContact) {
         this.name = name;
@@ -51,4 +52,6 @@ public class Project {
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public boolean isIncludeVat() { return includeVat; }
+    public void setIncludeVat(boolean includeVat) { this.includeVat = includeVat; }
 }
